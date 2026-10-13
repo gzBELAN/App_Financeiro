@@ -1,0 +1,4 @@
+export type ReportFilters = { startsOn: string; endsOn: string; categoryId?: string; creditCardId?: string; source?: "all" | "subscription" | "fixed_expense" };
+export type ReportRow = { id: string; date: string; description: string; category: string; card: string; source: string; paymentMethod: string; status: string; amountCents: number };
+export type ReportData = { rows: ReportRow[]; totalCents: number; paidCents: number; pendingCents: number; categoryTotals: { name: string; cents: number }[]; cardTotals: { name: string; cents: number }[] };
+export interface ReportRepository { getData(filters: ReportFilters): Promise<ReportData>; }

@@ -1,0 +1,2 @@
+export type Workspace = { id: string; name: string; role: "owner" | "editor" | "viewer" };
+export type WorkspaceMember = { id: string; displayName: string | null; role: "owner" | "editor" | "viewer" };

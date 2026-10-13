@@ -1,0 +1,56 @@
+# Etapa 5 — Módulo 4: Parcelamentos
+
+> **Status:** concluído em código. Nenhum comando, teste, instalação ou serviço externo foi executado.
+
+## Decisões arquiteturais
+
+Parcelamentos são criados por uma função PostgreSQL transacional: `public.create_installment_purchase`. A função grava a compra de origem e todas as parcelas em uma operação atômica. Se qualquer inserção falhar, nada é salvo parcialmente.
+
+O valor em centavos é dividido entre as parcelas sem perder precisão. Quando houver resto, os centavos são distribuídos nas primeiras parcelas. Por exemplo, `R$ 100,00` em `3x` resulta em `R$ 33,34`, `R$ 33,33` e `R$ 33,33`.
+
+As datas futuras preservam o dia da compra sempre que possível. Se um mês tiver menos dias, a parcela é criada no último dia daquele mês. Cada parcela é um `financial_entry` pendente, associado à compra e ao cartão.
+
+A função SQL de parcelamento recebe o controle financeiro ativo e valida a permissão de editor antes de criar a compra e as parcelas.
+
+## Arquivos criados ou alterados
+
+- **Alterado:** `supabase/migrations/descricao_consulta.sql`
+- `src/features/installments/domain/installment-purchase.ts`
+- `src/features/installments/application/installment-purchase-schema.ts`
+- `src/features/installments/application/installment-purchase-actions.ts`
+- `src/features/installments/infrastructure/supabase-installment-purchase-repository.ts`
+- `src/features/installments/presentation/installment-manager.tsx`
+- `src/app/(dashboard)/installments/page.tsx`
+- `docs/ETAPA_05_MODULO_PARCELAMENTOS.md`
+
+## Ação manual obrigatória no Supabase
+
+O script da Etapa 2 foi atualizado com a função `create_installment_purchase`. Se você já executou uma versão anterior do arquivo no Supabase, abra **SQL Editor**, copie novamente o conteúdo completo de `supabase/migrations/descricao_consulta.sql` e execute-o manualmente.
+
+O script usa comandos seguros de recriação para funções e views, mas tipos e tabelas não usam `if not exists`. Portanto, em uma base já inicializada, execute **somente** o bloco iniciado pelo comentário `-- Cria uma compra parcelada` e terminado antes de `-- View somente de leitura`.
+
+## Funcionalidades entregues
+
+- Registro de compra com descrição, valor total, data, cartão, categoria e observações.
+- Geração automática de 2 a 360 parcelas mensais.
+- Vínculo das parcelas ao cartão e à compra de origem.
+- Listagem da parcela atual, parcelas restantes e cronograma completo.
+- Preservação exata do valor total em centavos.
+- Consulta exclusiva de cartões ativos no formulário.
+
+## Rota protegida
+
+`/installments`
+
+## Teste manual sugerido — não executado
+
+1. Aplique manualmente a função SQL conforme a seção anterior.
+2. Cadastre um cartão ativo em `/cards`.
+3. Acesse `http://localhost:3000/installments`.
+4. Registre uma compra de `R$ 1.200,00` em `12` parcelas.
+5. Confira que o cronograma contém parcelas de `1/12` a `12/12` e que o total é `R$ 1.200,00`.
+6. Registre uma compra cujo total não seja divisível pelo número de parcelas e valide a distribuição de centavos.
+
+## Próximo módulo
+
+O próximo módulo da Etapa 5 é **Assinaturas Recorrentes**, com frequência, dia de cobrança, cartão opcional e geração de lançamentos futuros.

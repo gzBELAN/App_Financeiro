@@ -1,0 +1,29 @@
+"use client";
+
+import { FormEvent, useState, useTransition } from "react";
+
+import { createInstallmentPurchase } from "@/features/installments/application/installment-purchase-actions";
+import type { InstallmentPurchase } from "@/features/installments/domain/installment-purchase";
+
+type Option = { id: string; name: string };
+type InstallmentManagerProperties = { cards: Option[]; categories: Option[]; purchases: InstallmentPurchase[] };
+const formatCurrency = (cents: number) => new Intl.NumberFormat("pt-BR", { currency: "BRL", style: "currency" }).format(cents / 100);
+const formatDate = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(`${value}T00:00:00`));
+
+export function InstallmentManager({ cards, categories, purchases }: InstallmentManagerProperties) {
+  const [feedback, setFeedback] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    startTransition(async () => {
+      const result = await createInstallmentPurchase({}, new FormData(form));
+      setFeedback(result.error ?? result.success ?? null);
+      if (result.success) form.reset();
+    });
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  return <div className="space-y-6"><section className="rounded-lg border bg-card p-5 shadow-sm"><h2 className="text-lg font-semibold">Nova compra parcelada</h2><p className="mt-1 text-sm text-muted-foreground">As parcelas serão distribuídas mensalmente a partir da data da compra.</p><form className="mt-5 grid gap-4 md:grid-cols-2" onSubmit={submit}><label className="grid gap-1.5 text-sm font-medium md:col-span-2">Descrição<input className="h-10 rounded-md border bg-background px-3" maxLength={200} name="description" placeholder="Ex.: Notebook" required /></label><label className="grid gap-1.5 text-sm font-medium">Valor total<input className="h-10 rounded-md border bg-background px-3" inputMode="decimal" name="totalAmount" placeholder="1.200,00" required /></label><label className="grid gap-1.5 text-sm font-medium">Número de parcelas<input className="h-10 rounded-md border bg-background px-3" max="360" min="2" name="installmentCount" placeholder="12" required type="number" /></label><label className="grid gap-1.5 text-sm font-medium">Data da compra<input className="h-10 rounded-md border bg-background px-3" defaultValue={today} name="purchaseDate" required type="date" /></label><label className="grid gap-1.5 text-sm font-medium">Cartão<select className="h-10 rounded-md border bg-background px-3" defaultValue="" name="creditCardId" required><option disabled value="">Selecione um cartão</option>{cards.map((card) => <option key={card.id} value={card.id}>{card.name}</option>)}</select></label><label className="grid gap-1.5 text-sm font-medium">Categoria<select className="h-10 rounded-md border bg-background px-3" defaultValue="" name="categoryId"><option value="">Sem categoria</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label><label className="grid gap-1.5 text-sm font-medium">Observações<textarea className="min-h-10 rounded-md border bg-background px-3 py-2" maxLength={2000} name="notes" placeholder="Opcional" /></label><div className="flex items-end"><button className="h-10 w-full rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60" disabled={isPending || cards.length === 0} type="submit">{isPending ? "Gerando..." : "Gerar parcelas"}</button></div></form>{cards.length === 0 ? <p className="mt-4 text-sm text-red-600">Cadastre um cartão ativo antes de registrar uma compra parcelada.</p> : null}{feedback ? <p aria-live="polite" className="mt-4 text-sm text-muted-foreground">{feedback}</p> : null}</section><section className="space-y-4"><h2 className="text-xl font-semibold">Compras parceladas</h2>{purchases.length === 0 ? <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">Nenhuma compra parcelada registrada.</p> : purchases.map((purchase) => { const current = purchase.installments.find((item) => item.status !== "cancelled" && item.occurredOn >= today) ?? purchase.installments.at(-1); const remaining = purchase.installments.filter((item) => item.status !== "cancelled" && item.occurredOn >= today).length; return <article className="rounded-lg border bg-card p-5 shadow-sm" key={purchase.id}><div className="flex flex-col justify-between gap-4 sm:flex-row"><div><p className="text-sm text-muted-foreground">{purchase.creditCardName} · {purchase.categoryName ?? "Sem categoria"}</p><h3 className="text-lg font-semibold">{purchase.description}</h3><p className="mt-1 text-sm text-muted-foreground">Compra em {formatDate(purchase.purchaseDate)} · {purchase.installmentCount}x · Total {formatCurrency(purchase.totalAmountCents)}</p></div><div className="rounded-md bg-muted px-3 py-2 text-sm"><strong>{current ? `${current.number}/${current.count}` : "Concluída"}</strong><span className="ml-2 text-muted-foreground">{remaining} restante(s)</span></div></div><details className="mt-4"><summary className="cursor-pointer text-sm font-medium text-primary">Ver todas as parcelas</summary><ul className="mt-3 divide-y rounded-md border">{purchase.installments.map((installment) => <li className="flex items-center justify-between px-3 py-2 text-sm" key={installment.id}><span>{installment.number}/{installment.count} · {formatDate(installment.occurredOn)}</span><span><strong>{formatCurrency(installment.amountCents)}</strong> <span className="text-muted-foreground">{installment.status === "paid" ? "Pago" : installment.status === "cancelled" ? "Cancelado" : "Pendente"}</span></span></li>)}</ul></details></article>; })}</section></div>;
+}
