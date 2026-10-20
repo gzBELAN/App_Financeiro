@@ -7,7 +7,10 @@ import { createClient } from "@/lib/supabase/client";
 
 export function SignupForm() {
   const [error, setError] = useState<string | null>(null);
+  const [confirmationEmail, setConfirmationEmail] = useState<string | null>(null);
+  const [resendFeedback, setResendFeedback] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -43,15 +46,47 @@ export function SignupForm() {
     setIsSubmitting(false);
 
     if (signUpError) {
-      setError("Não foi possível criar a conta. Tente novamente com outro e-mail.");
+      setError(signUpError.message || "Não foi possível criar a conta. Tente novamente.");
       return;
     }
 
+    setConfirmationEmail(email);
     setIsSuccess(true);
   }
 
+  async function resendConfirmationEmail() {
+    if (!confirmationEmail) return;
+
+    setError(null);
+    setResendFeedback(null);
+    setIsResending(true);
+    const redirectTo = `${window.location.origin}/auth/callback?next=/dashboard`;
+    const { error: resendError } = await createClient().auth.resend({
+      type: "signup",
+      email: confirmationEmail,
+      options: { emailRedirectTo: redirectTo },
+    });
+    setIsResending(false);
+
+    if (resendError) {
+      setResendFeedback(resendError.message || "Não foi possível reenviar o e-mail agora. Aguarde alguns minutos e tente novamente.");
+      return;
+    }
+
+    setResendFeedback("Se o cadastro ainda estiver pendente, um novo e-mail de confirmação foi enviado.");
+  }
+
   if (isSuccess) {
-    return <p className="rounded-md bg-muted p-4 text-sm text-muted-foreground">Conta criada. Verifique seu e-mail para confirmar o cadastro antes de entrar.</p>;
+    return (
+      <div className="space-y-3 rounded-md bg-muted p-4 text-sm text-muted-foreground">
+        <p>Conta criada. Verifique a caixa de entrada e a pasta de spam de <strong>{confirmationEmail}</strong> para confirmar o cadastro antes de entrar.</p>
+        <button className="font-medium text-primary underline-offset-4 hover:underline disabled:opacity-60" disabled={isResending} onClick={resendConfirmationEmail} type="button">
+          {isResending ? "Reenviando e-mail..." : "Reenviar e-mail de confirmação"}
+        </button>
+        {resendFeedback ? <p aria-live="polite">{resendFeedback}</p> : null}
+        <p>Já confirmou? <Link className="font-medium text-primary underline-offset-4 hover:underline" href="/login">Entrar</Link></p>
+      </div>
+    );
   }
 
   return (

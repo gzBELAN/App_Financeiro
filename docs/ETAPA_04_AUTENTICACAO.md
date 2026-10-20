@@ -79,6 +79,17 @@ Após a autenticação, o controle financeiro ativo é resolvido no servidor e a
 
 Antes de testar um cadastro, confirme que o script da Etapa 2 foi executado manualmente. O gatilho `on_auth_user_created` precisa existir para criar o registro correspondente em `public.profiles`.
 
+### 3.5 Diagnosticar e-mails de confirmação não recebidos
+
+Depois de excluir uma conta e cadastrá-la novamente, o Supabase Auth deve criar um novo usuário e enviar uma nova confirmação. O aplicativo disponibiliza o botão **Reenviar e-mail de confirmação** logo após o cadastro, mas a entrega depende da configuração do projeto Supabase.
+
+1. Verifique **Authentication > Users**: não deve existir um usuário antigo com o mesmo e-mail. Se existir, confirme se ele está pendente e use o reenvio; caso esteja confirmado, entre na conta ou remova-o no painel antes de testar novamente.
+2. Verifique a caixa de spam, lixo eletrônico e regras/filtros do provedor de e-mail.
+3. Em **Authentication > Providers > Email**, confirme que o provedor está habilitado e que a confirmação de e-mail está ativa.
+4. Em **Authentication > URL Configuration**, confirme que a URL do ambiente atual está em **Site URL** e que `https://SEU-DOMINIO/auth/callback` está em **Redirect URLs**. Para desenvolvimento, use `http://localhost:3000/auth/callback`.
+5. Consulte os logs de Auth no Supabase para mensagens de limite de envio ou falha do provedor SMTP. O serviço de e-mail padrão possui limites e não é indicado para produção; configure SMTP próprio em **Project Settings > Auth > SMTP** para melhorar a entrega.
+6. Aguarde alguns minutos entre tentativas. O Supabase limita reenvios para reduzir abuso.
+
 ## 4. Teste manual sugerido — não executado
 
 Depois de configurar o ambiente e instalar dependências manualmente:
