@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_PATHS = ["/dashboard", "/expenses", "/categories", "/cards", "/subscriptions", "/fixed-expenses", "/goals", "/reports", "/workspace"];
+const PROTECTED_PATHS = ["/dashboard", "/expenses", "/categories", "/cards", "/installments", "/subscriptions", "/fixed-expenses", "/goals", "/reports", "/workspace"];
 const AUTH_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password"];
 
 function hasPathPrefix(pathname: string, paths: string[]) {
