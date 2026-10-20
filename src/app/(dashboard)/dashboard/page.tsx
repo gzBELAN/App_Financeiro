@@ -1,5 +1,8 @@
+import { redirect } from "next/navigation";
+
 import { DashboardView } from "@/features/dashboard/presentation/dashboard-view";
 import { SupabaseDashboardRepository } from "@/features/dashboard/infrastructure/supabase-dashboard-repository";
+import { SupabaseWorkspaceRepository } from "@/features/workspaces/infrastructure/supabase-workspace-repository";
 
 export const metadata = { title: "Dashboard" };
 
@@ -12,6 +15,8 @@ function currentMonth() {
 export default async function DashboardPage({ searchParams }: DashboardPageProperties) {
   const parameters = await searchParams;
   const referenceMonth = /^\d{4}-(0[1-9]|1[0-2])$/.test(parameters.month ?? "") ? parameters.month! : currentMonth();
+  const workspaces = await new SupabaseWorkspaceRepository().list();
+  if (!workspaces.length) redirect("/workspace");
   const data = await new SupabaseDashboardRepository().getData({ referenceMonth });
 
   return (

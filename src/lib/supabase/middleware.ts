@@ -51,9 +51,9 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (user && hasPathPrefix(pathname, PROTECTED_PATHS) && !hasPathPrefix(pathname, WORKSPACE_FREE_PATHS)) {
+  if (user && hasPathPrefix(pathname, PROTECTED_PATHS)) {
     const { count } = await supabase.from("workspace_members").select("workspace_id", { count: "exact", head: true });
-    if (!count) {
+    if (!count && !hasPathPrefix(pathname, WORKSPACE_FREE_PATHS)) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/workspace";
       redirectUrl.search = "";
