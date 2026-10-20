@@ -30,7 +30,7 @@ O produto será construído com **Next.js + React + TypeScript** no cliente e **
 ### 2.1 Casos de uso
 
 | Código | Caso de uso | Ator | Resultado esperado |
-| --- | --- | --- |
+| --- | --- | --- | --- |
 | UC-01 | Criar conta e iniciar sessão | Visitante | Usuário autenticado com área privada disponível. |
 | UC-02 | Recuperar acesso | Visitante | Usuário recebe fluxo seguro de redefinição de senha. |
 | UC-03 | Gerenciar categorias | Usuário autenticado | Categorias pessoais disponíveis para classificar despesas. |

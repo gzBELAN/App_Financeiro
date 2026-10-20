@@ -13,7 +13,7 @@ function monthBounds(referenceMonth: string) {
 }
 
 function monthKey(date: Date) { return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`; }
-function monthLabel(key: string) { return new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(new Date(`${key}-01T00:00:00Z")).replace(".", ""); }
+function monthLabel(key: string) { return new Intl.DateTimeFormat("pt-BR", { month: "short" }).format(new Date(`${key}-01T00:00:00Z`)).replace(".", ""); }
 
 export class SupabaseDashboardRepository implements DashboardRepository {
   async getData(filters: DashboardFilters): Promise<DashboardData> {
