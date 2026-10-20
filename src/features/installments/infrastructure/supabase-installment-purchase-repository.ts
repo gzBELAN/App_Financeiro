@@ -1,4 +1,4 @@
-import type { CreateInstallmentPurchaseInput, InstallmentPurchase, InstallmentPurchaseRepository } from "@/features/installments/domain/installment-purchase";
+import type { AdvanceInstallmentsInput, CreateInstallmentPurchaseInput, InstallmentPurchase, InstallmentPurchaseRepository } from "@/features/installments/domain/installment-purchase";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveWorkspace } from "@/lib/workspaces/active-workspace";
 
@@ -48,5 +48,22 @@ export class SupabaseInstallmentPurchaseRepository implements InstallmentPurchas
       p_workspace_id: workspace.id,
     });
     if (error) throw new Error("Não foi possível gerar o parcelamento. Confirme a configuração do banco e tente novamente.");
+  }
+
+  async advance(input: AdvanceInstallmentsInput): Promise<void> {
+    const supabase = await createClient();
+    const workspace = await getActiveWorkspace();
+    const { data: entries, error: entriesError } = await supabase.from("financial_entries").select("id, amount_cents").eq("workspace_id", workspace.id).eq("installment_purchase_id", input.purchaseId).eq("status", "pending").in("id", input.installmentIds);
+    if (entriesError || !entries || entries.length !== input.installmentIds.length) throw new Error("Não foi possível localizar todas as parcelas pendentes selecionadas.");
+    const totalCents = (entries as { id: string; amount_cents: number }[]).reduce((sum, entry) => sum + entry.amount_cents, 0);
+    if (input.discountCents < 0 || input.discountCents >= totalCents) throw new Error("O desconto deve ser menor que o total das parcelas adiantadas.");
+    const orderedEntries = [...entries as { id: string; amount_cents: number }[]].sort((left, right) => left.id.localeCompare(right.id));
+    let remainingDiscount = input.discountCents;
+    for (const [index, entry] of orderedEntries.entries()) {
+      const proportionalDiscount = index === orderedEntries.length - 1 ? remainingDiscount : Math.floor((entry.amount_cents * input.discountCents) / totalCents);
+      remainingDiscount -= proportionalDiscount;
+      const { error } = await supabase.from("financial_entries").update({ amount_cents: entry.amount_cents - proportionalDiscount, occurred_on: new Date().toISOString().slice(0, 10), status: "paid" }).eq("id", entry.id).eq("workspace_id", workspace.id).eq("status", "pending");
+      if (error) throw new Error("Não foi possível concluir o adiantamento das parcelas.");
+    }
   }
 }

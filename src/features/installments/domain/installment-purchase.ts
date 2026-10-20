@@ -29,7 +29,14 @@ export type CreateInstallmentPurchaseInput = {
   notes?: string;
 };
 
+export type AdvanceInstallmentsInput = {
+  purchaseId: string;
+  installmentIds: string[];
+  discountCents: number;
+};
+
 export interface InstallmentPurchaseRepository {
   list(): Promise<InstallmentPurchase[]>;
   create(input: CreateInstallmentPurchaseInput): Promise<void>;
+  advance(input: AdvanceInstallmentsInput): Promise<void>;
 }
