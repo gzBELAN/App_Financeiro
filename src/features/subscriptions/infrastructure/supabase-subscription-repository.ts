@@ -45,4 +45,23 @@ export class SupabaseSubscriptionRepository implements SubscriptionRepository {
     const { error: entriesError } = await supabase.from("financial_entries").delete().eq("recurring_rule_id", id).eq("workspace_id", workspace.id).eq("status", "pending").gte("occurred_on", today);
     if (entriesError) throw new Error("A assinatura foi encerrada, mas não foi possível remover as previsões futuras.");
   }
+
+  async reactivate(id: string): Promise<void> {
+    const supabase = await createClient();
+    const workspace = await getActiveWorkspace();
+    const { error } = await supabase.from("recurring_rules").update({ is_active: true }).eq("id", id).eq("workspace_id", workspace.id).eq("rule_type", "subscription");
+    if (error) throw new Error("Não foi possível reativar a assinatura.");
+    const { error: generationError } = await supabase.rpc("generate_recurring_entries", { p_rule_id: id });
+    if (generationError) throw new Error("A assinatura foi reativada, mas não foi possível gerar as previsões.");
+  }
+
+  async delete(id: string): Promise<void> {
+    const supabase = await createClient();
+    const workspace = await getActiveWorkspace();
+    const { count, error: countError } = await supabase.from("financial_entries").select("id", { count: "exact", head: true }).eq("recurring_rule_id", id).eq("workspace_id", workspace.id).eq("status", "paid");
+    if (countError) throw new Error("Não foi possível verificar o histórico da assinatura.");
+    if (count) throw new Error("A assinatura possui pagamentos no histórico e não pode ser excluída. Mantenha-a encerrada.");
+    const { error } = await supabase.from("recurring_rules").delete().eq("id", id).eq("workspace_id", workspace.id).eq("rule_type", "subscription").eq("is_active", false);
+    if (error) throw new Error("Não foi possível excluir a assinatura.");
+  }
 }

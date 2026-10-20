@@ -32,6 +32,7 @@ function readInput(formData: FormData) {
 function refreshExpenses() {
   revalidatePath("/expenses");
   revalidatePath("/dashboard");
+  revalidatePath("/reports");
 }
 
 export async function createExpense(_: ExpenseActionState, formData: FormData): Promise<ExpenseActionState> {

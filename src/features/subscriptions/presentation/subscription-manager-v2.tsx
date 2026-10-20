@@ -2,7 +2,7 @@
 
 import { FormEvent, useState, useTransition } from "react";
 
-import { createSubscription, deactivateSubscription, updateSubscription } from "@/features/subscriptions/application/subscription-actions";
+import { createSubscription, deactivateSubscription, deleteSubscription, reactivateSubscription, updateSubscription } from "@/features/subscriptions/application/subscription-actions";
 import type { RecurrenceFrequency, Subscription } from "@/features/subscriptions/domain/subscription";
 
 type Option = { id: string; name: string };
@@ -17,6 +17,8 @@ export function SubscriptionManagerV2({ cards, categories, subscriptions }: { ca
   const [isPending, startTransition] = useTransition();
   const today = new Date().toISOString().slice(0, 10);
   const nextYear = `${new Date().getFullYear() + 1}-12-31`;
+  const activeSubscriptions = subscriptions.filter((subscription) => subscription.isActive);
+  const completedSubscriptions = subscriptions.filter((subscription) => !subscription.isActive);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -37,6 +39,9 @@ export function SubscriptionManagerV2({ cards, categories, subscriptions }: { ca
     });
   }
 
+  function reactivate(subscription: Subscription) { startTransition(async () => { const result = await reactivateSubscription(subscription.id); setFeedback(result.error ?? result.success ?? null); }); }
+  function remove(subscription: Subscription) { if (!window.confirm(`Excluir permanentemente "${subscription.description}"? Isso só é permitido quando não há pagamentos no histórico.`)) return; startTransition(async () => { const result = await deleteSubscription(subscription.id); setFeedback(result.error ?? result.success ?? null); }); }
+
   return <div className="space-y-6">
     <section className="rounded-lg border bg-card p-5 shadow-sm">
       <h2 className="text-lg font-semibold">{editing ? "Editar assinatura" : "Nova assinatura"}</h2>
@@ -56,6 +61,7 @@ export function SubscriptionManagerV2({ cards, categories, subscriptions }: { ca
       </form>
       {feedback ? <p aria-live="polite" className="mt-4 text-sm text-muted-foreground">{feedback}</p> : null}
     </section>
-    <section className="space-y-4"><h2 className="text-xl font-semibold">Assinaturas cadastradas</h2>{subscriptions.length === 0 ? <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">Nenhuma assinatura cadastrada.</p> : subscriptions.map((subscription) => <article className="rounded-lg border bg-card p-5 shadow-sm" key={subscription.id}><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold">{subscription.description}</h3><p className="mt-1 text-sm text-muted-foreground">{currency(subscription.amountCents)} · {subscription.isActive ? "Ativa" : "Encerrada"}</p></div>{subscription.isActive ? <div className="flex gap-2"><button className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" disabled={isPending} onClick={() => setEditing(subscription)} type="button">Editar</button><button className="rounded-md px-3 py-1.5 text-sm text-red-600 hover:bg-red-50" disabled={isPending} onClick={() => deactivate(subscription)} type="button">Encerrar</button></div> : null}</div></article>)}</section>
+    <section className="space-y-4"><h2 className="text-xl font-semibold">Assinaturas ativas</h2>{activeSubscriptions.length === 0 ? <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">Nenhuma assinatura ativa.</p> : activeSubscriptions.map((subscription) => <article className="rounded-lg border bg-card p-5 shadow-sm" key={subscription.id}><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold">{subscription.description}</h3><p className="mt-1 text-sm text-muted-foreground">{currency(subscription.amountCents)} · Ativa</p></div><div className="flex gap-2"><button className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" disabled={isPending} onClick={() => setEditing(subscription)} type="button">Editar</button><button className="rounded-md px-3 py-1.5 text-sm text-red-600 hover:bg-red-50" disabled={isPending} onClick={() => deactivate(subscription)} type="button">Encerrar</button></div></div></article>)}</section>
+    {completedSubscriptions.length > 0 ? <section className="space-y-4"><header><h2 className="text-xl font-semibold">Assinaturas encerradas</h2><p className="mt-1 text-sm text-muted-foreground">Histórico preservado; não há novas cobranças projetadas.</p></header>{completedSubscriptions.map((subscription) => <article className="rounded-lg border bg-card p-5 opacity-80 shadow-sm" key={subscription.id}><div className="flex flex-wrap items-start justify-between gap-3"><div><h3 className="font-semibold">{subscription.description}</h3><p className="mt-1 text-sm text-muted-foreground">{currency(subscription.amountCents)} · Encerrada</p></div><div className="flex gap-2"><button className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" disabled={isPending} onClick={() => reactivate(subscription)} type="button">Reativar</button><button className="rounded-md px-3 py-1.5 text-sm text-red-600 hover:bg-red-50" disabled={isPending} onClick={() => remove(subscription)} type="button">Excluir definitivamente</button></div></div></article>)}</section> : null}
   </div>;
 }

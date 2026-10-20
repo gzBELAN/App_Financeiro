@@ -33,3 +33,13 @@ export async function deactivateSubscription(id: string): Promise<SubscriptionAc
   if (!id) return { error: "Assinatura inválida." };
   try { await new SupabaseSubscriptionRepository().deactivate(id); refreshSubscriptions(); return { success: "Assinatura encerrada e previsões futuras removidas." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
 }
+
+export async function reactivateSubscription(id: string): Promise<SubscriptionActionState> {
+  if (!id) return { error: "Assinatura inválida." };
+  try { await new SupabaseSubscriptionRepository().reactivate(id); refreshSubscriptions(); return { success: "Assinatura reativada e previsões geradas." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+}
+
+export async function deleteSubscription(id: string): Promise<SubscriptionActionState> {
+  if (!id) return { error: "Assinatura inválida." };
+  try { await new SupabaseSubscriptionRepository().delete(id); refreshSubscriptions(); return { success: "Assinatura excluída permanentemente." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+}

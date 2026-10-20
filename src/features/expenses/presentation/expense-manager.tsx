@@ -18,6 +18,7 @@ const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   pix: "Pix",
 };
 const ENTRY_KIND_LABEL: Record<EntryKind, string> = { expense: "Despesa", income: "Receita" };
+const DIRECT_PAYMENT_METHODS = PAYMENT_METHODS.filter((method) => method !== "credit_card");
 
 function centsToInput(amountCents: number) {
   return (amountCents / 100).toFixed(2).replace(".", ",");
@@ -78,7 +79,7 @@ export function ExpenseManager({ categories, expenses }: ExpenseManagerPropertie
         </div>
         <label className="grid gap-1.5 text-sm font-medium">Categoria<select className="h-10 rounded-md border bg-background px-3" defaultValue={editingExpense?.categoryId ?? ""} name="categoryId"><option value="">Sem categoria</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
         <div className="grid gap-4 sm:grid-cols-2">
-          <label className="grid gap-1.5 text-sm font-medium">Pagamento<select className="h-10 rounded-md border bg-background px-3" defaultValue={editingExpense?.paymentMethod ?? "pix"} name="paymentMethod">{PAYMENT_METHODS.map((method) => <option key={method} value={method}>{PAYMENT_METHOD_LABEL[method]}</option>)}</select></label>
+          <label className="grid gap-1.5 text-sm font-medium">Pagamento<select className="h-10 rounded-md border bg-background px-3" defaultValue={editingExpense?.paymentMethod === "credit_card" ? "pix" : editingExpense?.paymentMethod ?? "pix"} name="paymentMethod">{DIRECT_PAYMENT_METHODS.map((method) => <option key={method} value={method}>{PAYMENT_METHOD_LABEL[method]}</option>)}</select></label>
           <label className="grid gap-1.5 text-sm font-medium">Situação<select className="h-10 rounded-md border bg-background px-3" defaultValue={editingExpense?.status ?? "paid"} name="status"><option value="paid">Pago</option><option value="pending">Pendente</option></select></label>
         </div>
         <label className="grid gap-1.5 text-sm font-medium">Observações<textarea className="min-h-20 rounded-md border bg-background px-3 py-2" defaultValue={editingExpense?.notes ?? ""} maxLength={2000} name="notes" placeholder="Informações adicionais (opcional)" /></label>

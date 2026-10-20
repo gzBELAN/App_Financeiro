@@ -26,3 +26,13 @@ export async function archiveFinancialGoal(id: string): Promise<FinancialGoalAct
   if (!id) return { error: "Objetivo inválido." };
   try { await repository.archive(id); refreshGoals(); return { success: "Objetivo arquivado com sucesso." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
 }
+
+export async function restoreFinancialGoal(id: string): Promise<FinancialGoalActionState> {
+  if (!id) return { error: "Objetivo inválido." };
+  try { await repository.restore(id); refreshGoals(); return { success: "Objetivo reativado com sucesso." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+}
+
+export async function deleteFinancialGoal(id: string): Promise<FinancialGoalActionState> {
+  if (!id) return { error: "Objetivo inválido." };
+  try { await repository.delete(id); refreshGoals(); return { success: "Objetivo excluído permanentemente." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+}

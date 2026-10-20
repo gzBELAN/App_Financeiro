@@ -33,5 +33,7 @@ export interface FixedExpenseRepository {
   create(input: CreateFixedExpenseInput): Promise<void>;
   update(id: string, input: CreateFixedExpenseInput): Promise<void>;
   deactivate(id: string): Promise<void>;
+  reactivate(id: string): Promise<void>;
+  delete(id: string): Promise<void>;
   recordActualAmount(entryId: string, amountCents: number): Promise<void>;
 }

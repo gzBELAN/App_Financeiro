@@ -45,6 +45,25 @@ export class SupabaseFixedExpenseRepository implements FixedExpenseRepository {
     if (entriesError) throw new Error("A conta foi encerrada, mas não foi possível remover as previsões futuras.");
   }
 
+  async reactivate(id: string): Promise<void> {
+    const supabase = await createClient();
+    const workspace = await getActiveWorkspace();
+    const { error } = await supabase.from("recurring_rules").update({ is_active: true }).eq("id", id).eq("workspace_id", workspace.id).eq("rule_type", "fixed_expense");
+    if (error) throw new Error("Não foi possível reativar a conta fixa.");
+    const { error: generationError } = await supabase.rpc("generate_recurring_entries", { p_rule_id: id });
+    if (generationError) throw new Error("A conta foi reativada, mas não foi possível gerar as previsões.");
+  }
+
+  async delete(id: string): Promise<void> {
+    const supabase = await createClient();
+    const workspace = await getActiveWorkspace();
+    const { count, error: countError } = await supabase.from("financial_entries").select("id", { count: "exact", head: true }).eq("recurring_rule_id", id).eq("workspace_id", workspace.id).eq("status", "paid");
+    if (countError) throw new Error("Não foi possível verificar o histórico da conta fixa.");
+    if (count) throw new Error("A conta fixa possui pagamentos no histórico e não pode ser excluída. Mantenha-a encerrada.");
+    const { error } = await supabase.from("recurring_rules").delete().eq("id", id).eq("workspace_id", workspace.id).eq("rule_type", "fixed_expense").eq("is_active", false);
+    if (error) throw new Error("Não foi possível excluir a conta fixa.");
+  }
+
   async recordActualAmount(entryId: string, amountCents: number): Promise<void> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();

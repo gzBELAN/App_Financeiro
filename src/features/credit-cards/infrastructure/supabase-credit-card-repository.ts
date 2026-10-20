@@ -52,4 +52,19 @@ export class SupabaseCreditCardRepository implements CreditCardRepository {
     const { error } = await supabase.from("credit_cards").update({ is_active: false }).eq("id", id).eq("workspace_id", workspace.id);
     if (error) throw new Error("Não foi possível arquivar o cartão.");
   }
+
+  async restore(id: string): Promise<void> {
+    const supabase = await createClient();
+    const workspace = await getActiveWorkspace();
+    const { error } = await supabase.from("credit_cards").update({ is_active: true }).eq("id", id).eq("workspace_id", workspace.id);
+    if (error) throw new Error("Não foi possível reativar o cartão.");
+  }
+
+  async delete(id: string): Promise<void> {
+    const supabase = await createClient();
+    const workspace = await getActiveWorkspace();
+    const { error } = await supabase.from("credit_cards").delete().eq("id", id).eq("workspace_id", workspace.id).eq("is_active", false);
+    if (error?.code === "23503") throw new Error("Este cartão possui lançamentos vinculados e não pode ser excluído. Mantenha-o arquivado para preservar o histórico.");
+    if (error) throw new Error("Não foi possível excluir o cartão.");
+  }
 }

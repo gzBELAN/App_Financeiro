@@ -33,4 +33,6 @@ export interface SubscriptionRepository {
   create(input: CreateSubscriptionInput): Promise<void>;
   update(id: string, input: CreateSubscriptionInput): Promise<void>;
   deactivate(id: string): Promise<void>;
+  reactivate(id: string): Promise<void>;
+  delete(id: string): Promise<void>;
 }

@@ -41,3 +41,13 @@ export async function recordFixedExpenseActualAmount(_: FixedExpenseActionState,
   if (!entryId || !amountCents) return { error: "Informe um valor real válido." };
   try { await new SupabaseFixedExpenseRepository().recordActualAmount(entryId, amountCents); refreshFixedExpenses(); return { success: "Valor real registrado como pago." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
 }
+
+export async function reactivateFixedExpense(id: string): Promise<FixedExpenseActionState> {
+  if (!id) return { error: "Conta fixa inválida." };
+  try { await new SupabaseFixedExpenseRepository().reactivate(id); refreshFixedExpenses(); return { success: "Conta fixa reativada e previsões geradas." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+}
+
+export async function deleteFixedExpense(id: string): Promise<FixedExpenseActionState> {
+  if (!id) return { error: "Conta fixa inválida." };
+  try { await new SupabaseFixedExpenseRepository().delete(id); refreshFixedExpenses(); return { success: "Conta fixa excluída permanentemente." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+}

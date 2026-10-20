@@ -38,4 +38,18 @@ export class SupabaseFinancialGoalRepository implements FinancialGoalRepository 
     const { error } = await supabase.from("financial_goals").update({ is_archived: true }).eq("id", id).eq("workspace_id", workspace.id);
     if (error) throw new Error("Não foi possível arquivar o objetivo.");
   }
+
+  async restore(id: string): Promise<void> {
+    const supabase = await createClient();
+    const workspace = await getActiveWorkspace();
+    const { error } = await supabase.from("financial_goals").update({ is_archived: false }).eq("id", id).eq("workspace_id", workspace.id);
+    if (error) throw new Error("Não foi possível reativar o objetivo.");
+  }
+
+  async delete(id: string): Promise<void> {
+    const supabase = await createClient();
+    const workspace = await getActiveWorkspace();
+    const { error } = await supabase.from("financial_goals").delete().eq("id", id).eq("workspace_id", workspace.id).eq("is_archived", true);
+    if (error) throw new Error("Não foi possível excluir o objetivo.");
+  }
 }

@@ -15,6 +15,14 @@ type ExpenseRow = {
   categories: { name: string; color: string } | null;
 };
 
+function writeErrorMessage(error: { code?: string; message: string }) {
+  if (error.code === "42501") return "Você não tem permissão para registrar lançamentos neste controle financeiro.";
+  if (error.code === "23502") return "O banco de dados ainda não está atualizado para registrar lançamentos. Aplique a migração de controle compartilhado no Supabase.";
+  if (error.code === "23514") return "Os dados do lançamento são incompatíveis. Lançamentos comuns não podem usar cartão de crédito; use Parcelamentos ou Assinaturas para isso.";
+  if (error.code === "PGRST204" || error.code === "42703") return "O banco de dados não reconhece os campos do controle compartilhado. Aplique ou atualize a migração no Supabase.";
+  return `Não foi possível registrar o lançamento: ${error.message}`;
+}
+
 export class SupabaseExpenseRepository implements ExpenseRepository {
   async list(): Promise<Expense[]> {
     const supabase = await createClient();
@@ -65,7 +73,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
       created_by_id: user.id,
     });
 
-    if (error) throw new Error("Não foi possível registrar a despesa.");
+    if (error) throw new Error(writeErrorMessage(error));
   }
 
   async update(input: UpdateExpenseInput): Promise<void> {
@@ -82,13 +90,13 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
       status: input.status,
     }).eq("id", input.id).eq("workspace_id", workspace.id);
 
-    if (error) throw new Error("Não foi possível atualizar a despesa.");
+    if (error) throw new Error(writeErrorMessage(error));
   }
 
   async delete(id: string): Promise<void> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
     const { error } = await supabase.from("financial_entries").delete().eq("id", id).eq("workspace_id", workspace.id);
-    if (error) throw new Error("Não foi possível excluir a despesa.");
+    if (error) throw new Error(writeErrorMessage(error));
   }
 }

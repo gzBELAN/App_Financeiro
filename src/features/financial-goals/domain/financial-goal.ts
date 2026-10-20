@@ -16,4 +16,6 @@ export interface FinancialGoalRepository {
   create(input: FinancialGoalInput): Promise<void>;
   update(input: UpdateFinancialGoalInput): Promise<void>;
   archive(id: string): Promise<void>;
+  restore(id: string): Promise<void>;
+  delete(id: string): Promise<void>;
 }

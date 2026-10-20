@@ -18,4 +18,6 @@ export interface CreditCardRepository {
   create(input: CreditCardInput): Promise<void>;
   update(input: UpdateCreditCardInput): Promise<void>;
   archive(id: string): Promise<void>;
+  restore(id: string): Promise<void>;
+  delete(id: string): Promise<void>;
 }
