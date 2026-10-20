@@ -12,7 +12,7 @@ export async function createFixedExpense(_: FixedExpenseActionState, formData: F
   if ("error" in input) return input;
   try {
     await new SupabaseFixedExpenseRepository().create(input.data);
-    ["/fixed-expenses", "/expenses", "/dashboard"].forEach(revalidatePath);
+    ["/fixed-expenses", "/expenses", "/dashboard"].forEach((path) => revalidatePath(path));
     return { success: "Conta fixa criada e lançamentos futuros gerados com sucesso." };
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." };

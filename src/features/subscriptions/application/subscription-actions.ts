@@ -12,7 +12,7 @@ export async function createSubscription(_: SubscriptionActionState, formData: F
   if ("error" in input) return input;
   try {
     await new SupabaseSubscriptionRepository().create(input.data);
-    ["/subscriptions", "/expenses", "/cards", "/dashboard"].forEach(revalidatePath);
+    ["/subscriptions", "/expenses", "/cards", "/dashboard"].forEach((path) => revalidatePath(path));
     return { success: "Assinatura criada e lançamentos futuros gerados com sucesso." };
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." };
