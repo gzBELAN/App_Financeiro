@@ -1,4 +1,4 @@
-# Etapa 5 — Módulo 2: Despesas
+# Etapa 5 — Módulo 2: Lançamentos
 
 > **Status:** concluído em código. Nenhum comando, teste, instalação ou serviço externo foi executado.
 
@@ -9,9 +9,9 @@ O módulo mantém a estrutura em camadas por funcionalidade:
 - `domain`: tipos financeiros, formas de pagamento e contrato do repositório.
 - `application`: schema Zod, conversão segura de moeda para centavos e Server Actions.
 - `infrastructure`: persistência e leitura no Supabase.
-- `presentation`: formulário e lista responsiva de despesas.
+- `presentation`: formulário e lista responsiva de lançamentos.
 
-Valores inseridos como `12,50`, `12.50` ou `R$ 12,50` são convertidos para centavos antes da gravação. O banco permanece responsável pela integridade, RLS e constraints. Apenas despesas avulsas são exibidas neste módulo; parcelas e recorrências serão apresentadas nos módulos próprios nas próximas entregas.
+Valores inseridos como `12,50`, `12.50` ou `R$ 12,50` são convertidos para centavos antes da gravação. O banco permanece responsável pela integridade, RLS e constraints. O formulário registra receitas ou despesas avulsas; o saldo inicial é uma receita com a data de referência. Compras parceladas também são gerenciadas na página de lançamentos, em uma seção própria.
 
 Cada despesa é vinculada ao controle financeiro ativo. Assim, participantes autorizados veem o mesmo lançamento, enquanto despesas de outros controles não são incluídas.
 
@@ -27,12 +27,15 @@ Cada despesa é vinculada ao controle financeiro ativo. Assim, participantes aut
 
 ## Funcionalidades entregues
 
-- Cadastro de despesas com descrição, valor, data, categoria, forma de pagamento, status e observações.
-- Edição e exclusão de despesas avulsas.
+- Cadastro de receitas e despesas com descrição, valor, data, categoria, forma de pagamento, status e observações.
+- Edição e exclusão de lançamentos avulsos.
+- Registro de saldo inicial como receita.
+- Inclusão e consulta de compras parceladas na mesma rota.
 - Listagem em ordem decrescente de data.
 - Categoria opcional, com identificação visual por cor.
 - Validação de formato, valores positivos, tamanho de campos e data.
-- Atualização de cache das páginas de despesas e dashboard após cada alteração.
+- Atualização de lançamentos, dashboard e relatórios após cada alteração.
+- Lançamentos avulsos não aceitam cartão de crédito sem vínculo; use a seção de compras parceladas ou assinaturas para esse meio de pagamento.
 
 ## Rota protegida
 
@@ -49,8 +52,9 @@ O middleware existente exige uma sessão válida antes de entregar a página.
 5. Registre uma despesa com valor `125,90`, categoria e forma de pagamento.
 6. Confirme que o valor é exibido como `R$ 125,90`.
 7. Edite a despesa, marque-a como pendente e valide a atualização.
-8. Exclua a despesa e confirme que ela deixa de aparecer na lista.
+8. Registre uma receita ou saldo inicial e confirme o sinal positivo na lista e o reflexo no dashboard.
+9. Exclua um lançamento e confirme que ele deixa de aparecer na lista.
 
-## Próximo módulo
+## Integração com parcelamentos
 
-O próximo módulo da Etapa 5 é **Cartões de Crédito**, incluindo limite, fechamento, vencimento, bandeira, banco e cor identificadora.
+O fluxo de parcelamentos está documentado em `ETAPA_05_MODULO4_PARCELAMENTOS.md`, mas a interface está integrada à rota `/expenses`.

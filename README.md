@@ -1,6 +1,6 @@
 # App Financeiro
 
-Aplicação web responsiva para controle financeiro pessoal. O sistema permite organizar despesas, cartões de crédito, compras parceladas, assinaturas, contas fixas, objetivos financeiros, dashboard e relatórios exportáveis.
+Aplicação web responsiva para controle financeiro pessoal e compartilhado. O sistema permite organizar receitas, despesas, compras parceladas, cartões, recorrências, objetivos, controles independentes, dashboard e relatórios exportáveis.
 
 A aplicação foi projetada para uso em desktop, tablet, Android e iPhone, com suporte a PWA e cache offline básico de recursos estáticos.
 
@@ -10,9 +10,13 @@ O App Financeiro centraliza lançamentos em controles financeiros pessoais ou co
 
 A solução usa Next.js no frontend e Supabase para autenticação e banco de dados. O deploy recomendado é realizado na Vercel, com o código versionado no GitHub.
 
+## Estado atual e navegação
+
+O aplicativo usa um menu lateral responsivo: em telas grandes ele pode ser recolhido; em celulares é aberto por um botão no topo. A página **Lançamentos** reúne receitas, saldo inicial, despesas avulsas e compras parceladas. A rota antiga `/installments` redireciona para `/expenses` por compatibilidade.
+
 ## Objetivos
 
-- Facilitar o registro e o acompanhamento de despesas pessoais.
+- Facilitar o registro e o acompanhamento de receitas, saldo inicial e despesas pessoais.
 - Antecipar gastos futuros de parcelamentos, assinaturas e contas fixas.
 - Acompanhar cartões de crédito, limites e ciclos de fatura.
 - Dar visibilidade à evolução financeira por meio de indicadores e gráficos.
@@ -35,12 +39,24 @@ A solução usa Next.js no frontend e Supabase para autenticação e banco de da
 ### Gestão financeira
 
 - Categorias personalizadas com nome, cor e ícone opcional.
-- Despesas avulsas com descrição, valor, data, categoria, pagamento, status e observações.
+- Lançamentos avulsos de receita ou despesa, com descrição, valor, data, categoria, pagamento, status e observações.
+- Registro de saldo inicial como lançamento de receita datado.
 - Múltiplos cartões de crédito com banco, bandeira, limite, fechamento, vencimento e cor.
-- Compras parceladas com geração automática das parcelas futuras.
-- Assinaturas recorrentes com frequências mensal, trimestral, semestral ou anual.
-- Contas fixas recorrentes, como água, energia, aluguel e internet.
-- Objetivos financeiros com meta, valor atual, percentual concluído e valor restante.
+- Compras parceladas com geração automática das parcelas futuras e adiantamento de parcelas selecionadas, com desconto opcional distribuído entre elas.
+- Assinaturas recorrentes com frequências mensal, trimestral, semestral ou anual, edição, encerramento, reativação e exclusão segura.
+- Contas fixas recorrentes, como água, energia, aluguel e internet, com valor previsto e registro do valor real pago em cada competência.
+- Objetivos financeiros com meta, valor atual, percentual concluído, arquivamento, reativação e exclusão definitiva.
+- Cartões com arquivamento, reativação e exclusão definitiva quando não houver histórico vinculado.
+
+### Controles, participantes e configurações
+
+- Criação de múltiplos controles financeiros por conta.
+- Seleção do controle ativo; dados permanecem isolados por `workspace_id`.
+- Compartilhamento por e-mail com papéis **proprietário**, **editor** e **visualizador**.
+- Alteração de papel, remoção de participante e transferência de propriedade pelo proprietário.
+- Exclusão de controle financeiro com todos os seus dados, desde que exista outro controle acessível para a conta.
+- Configurações de perfil e aparência (claro, escuro ou sistema).
+- Exclusão definitiva de conta, com confirmação explícita e proteção para controles compartilhados ainda sob propriedade do usuário.
 
 ### Dashboard e relatórios
 
@@ -125,7 +141,8 @@ App_Financeiro/
 │   ├── components/
 │   │   └── pwa/                   # Registro do service worker
 │   ├── features/                  # Módulos organizados por domínio
-│   │   ├── workspaces/             # Controle ativo e participantes
+│   │   ├── workspaces/             # Controles, participantes e permissões
+│   │   ├── settings/               # Perfil, aparência e exclusão de conta
 │   │   ├── auth/
 │   │   ├── categories/
 │   │   ├── expenses/
@@ -178,6 +195,8 @@ Abra `.env.local` e informe os valores do seu projeto Supabase:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://SEU_PROJECT_REF.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=SUA_CHAVE_PUBLICA_DO_SUPABASE
+# Opcional localmente, obrigatória para a exclusão definitiva de conta em produção:
+SUPABASE_SERVICE_ROLE_KEY=SUA_CHAVE_SECRETA_APENAS_NO_SERVIDOR
 ```
 
 As credenciais são encontradas em **Supabase > Project Settings > API**.
@@ -189,7 +208,8 @@ As credenciais são encontradas em **Supabase > Project Settings > API**.
 3. Copie o conteúdo de `supabase/migrations/descricao_consulta.sql`.
 4. Para um projeto novo, execute o script completo uma única vez.
 5. Em seguida, execute `supabase/migrations/shared_financial_workspaces.sql` uma única vez.
-6. Confira tabelas, funções, view e políticas RLS no painel do Supabase.
+6. Por fim, execute `supabase/migrations/workspace_settings_management.sql` uma única vez.
+7. Confira tabelas, funções, view e políticas RLS no painel do Supabase.
 
 ### 4. Configurar autenticação
 
@@ -227,7 +247,7 @@ O guia detalhado está em [`docs/ETAPA_09_DEPLOY.md`](docs/ETAPA_09_DEPLOY.md).
 ### Resumo do processo
 
 1. Crie e configure manualmente um projeto no Supabase.
-2. Aplique `supabase/migrations/descricao_consulta.sql` e depois `supabase/migrations/shared_financial_workspaces.sql`.
+2. Aplique `descricao_consulta.sql`, `shared_financial_workspaces.sql` e `workspace_settings_management.sql`, nesta ordem.
 3. Configure Supabase Auth e as URLs de callback.
 4. Crie um repositório no GitHub e envie o código.
 5. Importe o repositório na Vercel como projeto Next.js.
@@ -242,13 +262,14 @@ O guia detalhado está em [`docs/ETAPA_09_DEPLOY.md`](docs/ETAPA_09_DEPLOY.md).
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | Sim | URL pública do projeto Supabase. |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Sim | Chave pública/publishable usada pelo cliente Supabase. |
+| `SUPABASE_SERVICE_ROLE_KEY` | Para exclusão de conta | Chave secreta usada exclusivamente pela rota de servidor `/api/account`; nunca use prefixo `NEXT_PUBLIC_`. |
 
 ### Segurança
 
 - Nunca versione `.env.local`.
 - Nunca exponha a senha do banco.
-- Nunca exponha a `service_role key` no navegador ou nas variáveis públicas da Vercel.
-- Use apenas a chave pública/publishable nesta aplicação.
+- Nunca exponha a `SUPABASE_SERVICE_ROLE_KEY` no navegador ou em variáveis `NEXT_PUBLIC_`.
+- Cadastre a chave secreta somente no ambiente de servidor da Vercel quando desejar habilitar a exclusão de conta.
 
 ## Roadmap
 
@@ -263,26 +284,26 @@ O guia detalhado está em [`docs/ETAPA_09_DEPLOY.md`](docs/ETAPA_09_DEPLOY.md).
 - [x] Relatórios e exportação CSV/Excel.
 - [x] PWA com manifest, service worker e fallback offline.
 - [x] Guia manual de deploy para GitHub, Supabase e Vercel.
-- [x] Controles financeiros compartilhados com permissões por participante.
+- [x] Controles financeiros compartilhados, múltiplos controles por conta e permissões administráveis por participante.
+- [x] Menu lateral responsivo e página de configurações.
+- [x] Ciclo de vida consistente para itens arquiváveis/encerráveis: separar ativos, reativar e excluir quando seguro.
 
 ### Evoluções futuras sugeridas
 
 - [ ] Criar testes unitários, de integração e E2E.
-- [ ] Adicionar navegação global entre os módulos.
 - [ ] Automatizar extensão do horizonte de lançamentos recorrentes.
-- [ ] Implementar gestão de receitas pela interface.
 - [ ] Implementar faturas detalhadas por ciclo de cartão.
 - [ ] Adicionar notificações de vencimentos e metas.
 - [ ] Criar importação de dados financeiros.
 - [ ] Adicionar suporte a múltiplas moedas.
 - [ ] Criar backups e estratégia formal de observabilidade.
-- [ ] Criar convites por e-mail, remoção de participantes e transferência de propriedade pela interface.
+- [ ] Criar convites por e-mail para contas ainda não cadastradas.
 
 ## Documentação adicional
 
 Os documentos de cada etapa estão na pasta [`docs`](docs/), incluindo arquitetura, banco, autenticação, módulos financeiros, dashboard, relatórios, PWA e publicação.
 
-Para a configuração e o uso de controles compartilhados, consulte [`docs/COMPARTILHAMENTO_DE_CONTROLE_FINANCEIRO.md`](docs/COMPARTILHAMENTO_DE_CONTROLE_FINANCEIRO.md).
+Para a configuração e o uso de controles compartilhados, consulte [`docs/ETAPA_06_CONTROLE_COMPARTILHADO.md`](docs/ETAPA_06_CONTROLE_COMPARTILHADO.md).
 
 ---
 

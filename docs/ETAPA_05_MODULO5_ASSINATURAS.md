@@ -39,6 +39,10 @@ Os blocos estão em `supabase/migrations/descricao_consulta.sql`, após a funç�
 - Geração automática de lançamentos previstos até uma data escolhida.
 - Consulta das previsões geradas por assinatura.
 - Garantia de idempotência para impedir lançamentos duplicados.
+- Edição da regra com recálculo apenas das previsões futuras pendentes.
+- Encerramento que preserva lançamentos pagos e remove previsões pendentes futuras.
+- Seções separadas para assinaturas ativas e encerradas, com opção de reativar.
+- Exclusão definitiva apenas quando não há pagamentos no histórico.
 - Rota protegida: `/subscriptions`.
 
 ## Teste manual sugerido — não executado
@@ -48,6 +52,8 @@ Os blocos estão em `supabase/migrations/descricao_consulta.sql`, após a funç�
 3. Cadastre `Netflix`, valor `39,90`, frequência mensal, dia `10` e geração até o fim do próximo ano.
 4. Confira que os lançamentos previstos aparecem na assinatura.
 5. Repita com um cartão selecionado e valide que a assinatura possui o cartão exibido.
+6. Encerre a assinatura e confirme que ela vai para a seção de encerradas sem apagar pagamentos anteriores.
+7. Reative-a e confirme a geração de novas previsões.
 
 ## Próximo módulo
 

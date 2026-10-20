@@ -12,6 +12,8 @@ As datas futuras preservam o dia da compra sempre que possível. Se um mês tive
 
 A função SQL de parcelamento recebe o controle financeiro ativo e valida a permissão de editor antes de criar a compra e as parcelas.
 
+A interface de parcelamentos foi integrada à página **Lançamentos** (`/expenses`). A rota legada `/installments` apenas redireciona para essa página.
+
 ## Arquivos criados ou alterados
 
 - **Alterado:** `supabase/migrations/descricao_consulta.sql`
@@ -19,8 +21,9 @@ A função SQL de parcelamento recebe o controle financeiro ativo e valida a per
 - `src/features/installments/application/installment-purchase-schema.ts`
 - `src/features/installments/application/installment-purchase-actions.ts`
 - `src/features/installments/infrastructure/supabase-installment-purchase-repository.ts`
-- `src/features/installments/presentation/installment-manager.tsx`
+- `src/features/installments/presentation/installment-manager-v2.tsx`
 - `src/app/(dashboard)/installments/page.tsx`
+- `src/app/(dashboard)/expenses/page.tsx`
 - `docs/ETAPA_05_MODULO_PARCELAMENTOS.md`
 
 ## Ação manual obrigatória no Supabase
@@ -37,19 +40,24 @@ O script usa comandos seguros de recriação para funções e views, mas tipos e
 - Listagem da parcela atual, parcelas restantes e cronograma completo.
 - Preservação exata do valor total em centavos.
 - Consulta exclusiva de cartões ativos no formulário.
+- Seleção de parcelas pendentes para adiantamento.
+- Desconto opcional ao adiantar parcelas; quando informado, ele é distribuído proporcionalmente entre as parcelas selecionadas.
+- Parcelas adiantadas são marcadas como pagas na data atual e deixam de compor previsões pendentes.
 
 ## Rota protegida
 
-`/installments`
+`/expenses` concentra lançamentos e parcelamentos. A rota legada `/installments` redireciona para ela.
 
 ## Teste manual sugerido — não executado
 
 1. Aplique manualmente a função SQL conforme a seção anterior.
 2. Cadastre um cartão ativo em `/cards`.
-3. Acesse `http://localhost:3000/installments`.
+3. Acesse `http://localhost:3000/expenses`.
 4. Registre uma compra de `R$ 1.200,00` em `12` parcelas.
 5. Confira que o cronograma contém parcelas de `1/12` a `12/12` e que o total é `R$ 1.200,00`.
 6. Registre uma compra cujo total não seja divisível pelo número de parcelas e valide a distribuição de centavos.
+7. Selecione parcelas pendentes, adiante-as sem desconto e confirme que são marcadas como pagas.
+8. Repita com desconto e confirme que a soma dos valores pagos diminui exatamente pelo desconto informado.
 
 ## Próximo módulo
 

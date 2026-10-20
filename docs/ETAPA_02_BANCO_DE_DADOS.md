@@ -200,6 +200,10 @@ Após executar o script no Supabase, confira:
 
 **Etapa 3 — Estrutura do Projeto:** serão definidos diretórios, configurações Next.js, TypeScript, Tailwind, ESLint e Prettier. Nenhuma dependência será instalada; serão apresentados apenas os comandos manuais necessários.
 
-### Complemento: controles compartilhados
+### Complementos: controles, participantes e configurações
 
-Depois de aplicar o script base, aplique `supabase/migrations/shared_financial_workspaces.sql`. O guia `docs/COMPARTILHAMENTO_DE_CONTROLE_FINANCEIRO.md` descreve o modelo, as permissões e o teste manual de compartilhamento.
+Depois de aplicar o script base, aplique `supabase/migrations/shared_financial_workspaces.sql` e, depois, `supabase/migrations/workspace_settings_management.sql`.
+
+A segunda migração cria workspaces, vínculos de participantes, RLS e funções financeiras adaptadas ao controle ativo. A terceira adiciona funções protegidas para criar e excluir controles, alterar permissões, remover participantes, transferir propriedade e limpar dados antes da exclusão de conta.
+
+Consulte `docs/ETAPA_06_CONTROLE_COMPARTILHADO.md` para o modelo, os papéis e o teste manual.

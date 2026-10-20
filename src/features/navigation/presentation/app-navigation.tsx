@@ -12,6 +12,7 @@ import {
   Menu,
   ReceiptText,
   Repeat2,
+  Settings,
   Tags,
   Target,
   UsersRound,
@@ -37,6 +38,7 @@ const navigationItems: NavigationItem[] = [
   { href: "/goals", label: "Metas", icon: Target },
   { href: "/reports", label: "Relatórios", icon: BarChart3 },
   { href: "/workspace", label: "Compartilhar", icon: UsersRound },
+  { href: "/settings", label: "Configurações", icon: Settings },
 ];
 
 function NavigationLinks({

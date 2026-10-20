@@ -2,13 +2,13 @@
 
 ## Objetivo
 
-Um controle financeiro pode ter várias pessoas. Cada pessoa entra com sua própria conta, escolhe o controle compartilhado e enxerga os mesmos dados daquele controle: categorias, despesas, cartões, parcelamentos, assinaturas, contas fixas, objetivos, dashboard e relatórios.
+Um controle financeiro pode ter várias pessoas. Cada pessoa entra com sua própria conta, escolhe o controle compartilhado e enxerga os mesmos dados daquele controle: lançamentos, cartões, compras parceladas, assinaturas, contas fixas, objetivos, dashboard e relatórios.
 
 Uma pessoa também pode participar de mais de um controle, sem misturar os dados entre eles.
 
 ## Papéis
 
-| Papel | Leitura | Alterar dados financeiros | Adicionar participantes |
+| Papel | Leitura | Alterar dados financeiros | Administrar participantes e controle |
 | --- | --- | --- | --- |
 | Proprietário | Sim | Sim | Sim |
 | Editor | Sim | Sim | Não |
@@ -31,6 +31,7 @@ O `workspace_id` passa a ser o limite de isolamento financeiro. O usuário auten
 ## Arquivos criados ou alterados
 
 - `supabase/migrations/shared_financial_workspaces.sql`
+- `supabase/migrations/workspace_settings_management.sql`
 - `src/features/workspaces/**`
 - `src/lib/workspaces/active-workspace.ts`
 - `src/app/(dashboard)/workspace/page.tsx`
@@ -48,22 +49,37 @@ O `workspace_id` passa a ser o limite de isolamento financeiro. O usuário auten
 6. Confirme que as tabelas `financial_workspaces` e `workspace_members` foram criadas.
 7. Confirme que cada usuário existente recebeu um workspace pessoal e vínculo `owner`.
 8. Confirme que as tabelas financeiras possuem `workspace_id` e que as políticas RLS foram atualizadas.
+9. Depois, abra `workspace_settings_management.sql`, copie seu conteúdo completo e execute-o uma única vez.
+10. Confirme que as funções `create_financial_workspace`, `update_workspace_member_role`, `remove_workspace_member`, `transfer_workspace_ownership` e `delete_financial_workspace` estão disponíveis.
 
-Para um projeto criado do zero, aplique primeiro `descricao_consulta.sql` e em seguida `shared_financial_workspaces.sql`.
+Para um projeto criado do zero, aplique nesta ordem: `descricao_consulta.sql`, `shared_financial_workspaces.sql` e `workspace_settings_management.sql`.
 
 ## Como compartilhar
 
 1. A pessoa convidada deve criar e confirmar sua conta antes de ser adicionada.
-2. O proprietário abre `/workspace`.
-3. Em **Participantes**, informa o e-mail da pessoa e escolhe **Editor** ou **Visualizador**.
-4. A pessoa adicionada entra com a própria conta.
-5. Ela seleciona o controle na lista de **Controle ativo**.
-6. A partir desse momento, os módulos mostram somente os dados do controle escolhido.
+2. O proprietário abre **Compartilhar** (`/workspace`).
+3. Para criar um controle separado, informa o nome em **Novo controle financeiro**. O novo controle é selecionado automaticamente.
+4. Em **Participantes**, informa o e-mail da pessoa e escolhe **Editor** ou **Visualizador**.
+5. A pessoa adicionada entra com a própria conta e seleciona o controle desejado.
+6. O proprietário pode alterar a permissão, remover a pessoa ou transferir a propriedade para um participante existente.
+7. A partir desse momento, os módulos mostram somente os dados do controle escolhido.
 
-## Limitações da primeira versão
+## Ciclo de vida de controles
+
+- Um usuário pode criar vários controles financeiros próprios.
+- Apenas o proprietário pode excluir um controle; a exclusão apaga seus dados e participantes por cascata.
+- A interface exige que a conta mantenha ou crie outro controle acessível antes de apagar o último controle selecionado.
+- Antes de excluir uma conta proprietária de controle compartilhado, transfira a propriedade ou exclua o controle. Essa proteção também é validada pelo banco.
+
+## Configurações da conta
+
+Em **Configurações** (`/settings`) o usuário pode atualizar o nome de perfil, escolher o tema claro/escuro/sistema e solicitar a exclusão definitiva da conta.
+
+A exclusão da conta usa a rota protegida `/api/account` e exige `SUPABASE_SERVICE_ROLE_KEY` disponível somente no ambiente de servidor. A variável nunca deve receber o prefixo `NEXT_PUBLIC_`.
+
+## Limitações atuais
 
 - A adição é direta e exige que a conta do participante já exista; não há envio automático de convite por e-mail.
-- Remoção de participante, transferência de propriedade e criação de novos controles pela interface são evoluções futuras.
 - Não compartilhe uma conta de usuário: cada participante deve usar seu próprio login.
 
 ## Teste manual sugerido
@@ -73,4 +89,6 @@ Para um projeto criado do zero, aplique primeiro `descricao_consulta.sql` e em s
 3. Abra `/workspace` e adicione a segunda conta como editor.
 4. Entre com a segunda conta, selecione o controle compartilhado e confirme que a categoria e a despesa aparecem.
 5. Como editor, crie uma nova despesa e confirme que a primeira conta a visualiza.
-6. Altere o papel para visualizador diretamente no Supabase apenas para teste e confirme que ele consegue ler, mas não gravar.
+6. Como proprietário, altere a segunda conta para visualizador e confirme que ela consegue ler, mas não gravar.
+7. Altere novamente para editor, transfira a propriedade e confirme que o antigo proprietário perde os controles administrativos.
+8. Crie um segundo controle e confirme que os dados não se misturam.

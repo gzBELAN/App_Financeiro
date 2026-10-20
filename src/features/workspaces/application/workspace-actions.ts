@@ -27,3 +27,39 @@ export async function addWorkspaceMember(_: { error?: string; success?: string }
     return { success: "Participante adicionado ao controle financeiro." };
   } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
 }
+
+function refreshWorkspaces() { revalidatePath("/workspace"); revalidatePath("/settings"); revalidatePath("/", "layout"); }
+
+export async function createWorkspace(_: { error?: string; success?: string }, formData: FormData) {
+  const name = String(formData.get("name") ?? "").trim();
+  if (name.length < 1 || name.length > 100) return { error: "Informe um nome entre 1 e 100 caracteres." };
+  try {
+    const id = await new SupabaseWorkspaceRepository().create(name);
+    (await cookies()).set(ACTIVE_WORKSPACE_COOKIE, id, { httpOnly: true, path: "/", sameSite: "lax", secure: process.env.NODE_ENV === "production" });
+    refreshWorkspaces();
+    return { success: "Novo controle financeiro criado e selecionado." };
+  } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+}
+
+export async function updateWorkspaceMemberRole(workspaceId: string, profileId: string, role: "editor" | "viewer") {
+  try { await new SupabaseWorkspaceRepository().updateMemberRole(workspaceId, profileId, role); refreshWorkspaces(); return { success: "Permissão atualizada." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+}
+
+export async function removeWorkspaceMember(workspaceId: string, profileId: string) {
+  try { await new SupabaseWorkspaceRepository().removeMember(workspaceId, profileId); refreshWorkspaces(); return { success: "Participante removido." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+}
+
+export async function transferWorkspaceOwnership(workspaceId: string, profileId: string) {
+  try { await new SupabaseWorkspaceRepository().transferOwnership(workspaceId, profileId); refreshWorkspaces(); return { success: "Propriedade transferida. Você agora é editor neste controle." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+}
+
+export async function deleteWorkspace(workspaceId: string) {
+  try {
+    const available = await new SupabaseWorkspaceRepository().list();
+    if (available.length <= 1) return { error: "Crie ou mantenha outro controle antes de excluir este último." };
+    await new SupabaseWorkspaceRepository().delete(workspaceId);
+    (await cookies()).delete(ACTIVE_WORKSPACE_COOKIE);
+    refreshWorkspaces();
+    return { success: "Controle financeiro e seus dados foram excluídos." };
+  } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+}

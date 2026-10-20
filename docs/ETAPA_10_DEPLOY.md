@@ -66,9 +66,10 @@ Corrija qualquer falha antes de continuar. Esses comandos não foram executados 
 3. Abra o arquivo local `supabase/migrations/descricao_consulta.sql`.
 4. Para um projeto novo, copie **todo** o conteúdo do arquivo e cole no editor.
 5. Clique em **Run**.
-6. Em seguida, aplique também `supabase/migrations/shared_financial_workspaces.sql` para habilitar controles compartilhados.
-7. Consulte `docs/COMPARTILHAMENTO_DE_CONTROLE_FINANCEIRO.md` para validar os papéis e o fluxo de participantes.
-6. Abra **Table Editor** e confirme as tabelas:
+6. Em seguida, aplique `supabase/migrations/shared_financial_workspaces.sql` para habilitar controles compartilhados.
+7. Por fim, aplique `supabase/migrations/workspace_settings_management.sql` para habilitar múltiplos controles, administração de participantes e exclusão segura.
+8. Consulte `docs/ETAPA_06_CONTROLE_COMPARTILHADO.md` para validar os papéis e o fluxo de participantes.
+9. Abra **Table Editor** e confirme as tabelas:
    - `profiles`
    - `categories`
    - `credit_cards`
@@ -76,7 +77,7 @@ Corrija qualquer falha antes de continuar. Esses comandos não foram executados 
    - `recurring_rules`
    - `financial_entries`
    - `financial_goals`
-7. Confirme também a view `credit_card_invoice_items` e as funções de parcelamento/recorrência.
+10. Confirme também a view `credit_card_invoice_items`, as funções de parcelamento/recorrência e as funções de gerenciamento de controles.
 
 > Para banco que já recebeu scripts parciais durante o desenvolvimento, não cole o arquivo todo novamente: execute somente os blocos de função ainda não aplicados, conforme os documentos dos módulos. Para a produção final, a abordagem recomendada é criar um projeto novo e aplicar o script completo uma única vez.
 
@@ -99,7 +100,8 @@ Corrija qualquer falha antes de continuar. Esses comandos não foram executados 
 1. Acesse **Project Settings > API**.
 2. Copie **Project URL**.
 3. Copie a chave pública identificada como **Publishable key**.
-4. Não use a `service_role key` no frontend, na Vercel ou em arquivos versionados.
+4. Copie a **service_role key** somente se desejar habilitar a exclusão definitiva de conta. Ela será cadastrada exclusivamente como segredo de servidor na Vercel.
+5. Nunca use a `service_role key` no frontend, em código do navegador ou em arquivos versionados.
 
 Esses valores serão usados na Vercel e localmente:
 
@@ -178,7 +180,13 @@ Antes de clicar em Deploy, em **Environment Variables**, adicione as duas variá
 | `NEXT_PUBLIC_SUPABASE_URL` | URL do projeto Supabase. |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Chave pública/publishable do Supabase. |
 
-Não cadastre `SUPABASE_SERVICE_ROLE_KEY` para esta aplicação, pois não há necessidade dela na arquitetura atual.
+Se desejar habilitar a exclusão definitiva de conta, adicione também a variável abaixo para **Production** e **Preview**. Ela é lida apenas pela rota de servidor `/api/account`:
+
+| Nome | Valor |
+| --- | --- |
+| `SUPABASE_SERVICE_ROLE_KEY` | Chave secreta service role do Supabase. |
+
+> Nunca use `NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY` e nunca exponha esse valor em componentes Client.
 
 ### 5.3 Publicar
 
@@ -210,7 +218,11 @@ Após a integração, cada `git push` para `main` gera deploy de produção. Pus
 - [ ] Login, logout e recuperação de senha funcionam.
 - [ ] Rotas privadas redirecionam para login sem sessão.
 - [ ] RLS impede que um usuário acesse dados de outro.
-- [ ] Categorias, despesas, cartões, parcelamentos, assinaturas, contas fixas e objetivos funcionam.
+- [ ] Receitas, despesas e compras parceladas funcionam em **Lançamentos**.
+- [ ] Adiantamento de parcelas com e sem desconto funciona.
+- [ ] Cartões, assinaturas, contas fixas e objetivos permitem arquivar/encerrar, reativar e excluir quando seguro.
+- [ ] Criação de controles, permissões, remoção de participantes e transferência de propriedade funcionam.
+- [ ] Configurações de perfil/aparência funcionam; exclusão de conta é testada apenas em ambiente seguro.
 - [ ] Dashboard e relatórios carregam dados corretos.
 - [ ] Exportação CSV e Excel funciona.
 - [ ] Manifest e instalação PWA funcionam em navegador compatível.

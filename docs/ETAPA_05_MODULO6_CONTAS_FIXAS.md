@@ -36,6 +36,10 @@ O bloco está em `supabase/migrations/descricao_consulta.sql`, após a função 
 - Frequências mensal, trimestral, semestral e anual.
 - Lançamentos futuros gerados até uma data informada.
 - Visualização de todas as ocorrências previstas.
+- Registro do valor real pago por competência, adequado para contas variáveis como água e energia.
+- Edição da regra com recálculo das previsões pendentes futuras.
+- Encerramento, reativação e seção separada para contas encerradas, preservando o histórico pago.
+- Exclusão definitiva apenas quando não há pagamentos no histórico.
 - Rota protegida: `/fixed-expenses`.
 
 ## Teste manual sugerido — não executado
@@ -45,6 +49,8 @@ O bloco está em `supabase/migrations/descricao_consulta.sql`, após a função 
 3. Cadastre `Internet`, valor `119,90`, frequência mensal, cobrança no dia `15`, pagamento via Pix e previsão até o fim do próximo ano.
 4. Confira a lista de lançamentos futuros criada para a conta.
 5. Cadastre um lançamento anual, como seguro, e confirme que somente uma ocorrência por ano é criada.
+6. Em uma conta de água ou energia, registre um valor real diferente da previsão e confirme que a competência fica marcada como paga.
+7. Encerre e reative uma conta para validar a separação entre itens ativos e encerrados.
 
 ## Próximo módulo
 

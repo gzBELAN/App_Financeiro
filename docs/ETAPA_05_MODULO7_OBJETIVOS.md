@@ -6,7 +6,7 @@
 
 Objetivos usam a tabela `financial_goals`, já definida na Etapa 2. O percentual não é gravado no banco; ele é calculado na interface a partir de `current_amount_cents / target_amount_cents`. Isso impede inconsistências entre dados derivados e valores efetivamente persistidos.
 
-Objetivos são arquivados em vez de excluídos, preservando o histórico de metas concluídas, abandonadas ou substituídas. O valor atual pode superar a meta, mas o indicador visual é limitado a 100% e o valor restante não fica negativo.
+Objetivos podem ser arquivados para preservar o histórico de metas concluídas, abandonadas ou substituídas. Arquivados ficam em uma seção própria e podem ser reativados ou excluídos definitivamente. O valor atual pode superar a meta, mas o indicador visual é limitado a 100% e o valor restante não fica negativo.
 
 Cada objetivo pertence ao controle financeiro ativo e seu progresso é compartilhado com todos os participantes autorizados.
 
@@ -27,6 +27,8 @@ Cada objetivo pertence ao controle financeiro ativo e seu progresso é compartil
 - Cálculo de percentual concluído.
 - Cálculo de valor restante.
 - Arquivamento preservando histórico.
+- Seção separada para objetivos arquivados.
+- Reativação e exclusão definitiva de objetivo arquivado.
 - Rota protegida: `/goals`.
 
 ## Teste manual sugerido — não executado
@@ -35,7 +37,9 @@ Cada objetivo pertence ao controle financeiro ativo e seu progresso é compartil
 2. Crie uma meta `Reserva de emergência` de `R$ 10.000,00` com valor atual de `R$ 2.500,00`.
 3. Confirme o progresso exibido em `25%` e o restante de `R$ 7.500,00`.
 4. Atualize o valor atual e valide a barra de progresso.
-5. Arquive o objetivo e confirme que ele permanece acessível como arquivado.
+5. Arquive o objetivo e confirme que ele aparece na seção de arquivados.
+6. Reative-o e confirme que volta aos indicadores ativos.
+7. Exclua permanentemente um objetivo arquivado de teste.
 
 ## Etapa 5 concluída
 
