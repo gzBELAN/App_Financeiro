@@ -19,7 +19,7 @@ export class SupabaseFinancialGoalRepository implements FinancialGoalRepository 
     const workspace = await getActiveWorkspace();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Sua sessão expirou. Entre novamente para continuar.");
-    const { error } = await supabase.from("financial_goals").insert({ color: input.color, current_amount_cents: input.currentAmountCents, name: input.name, target_amount_cents: input.targetAmountCents, target_date: input.targetDate, workspace_id: workspace.id, created_by_id: user.id });
+    const { error } = await supabase.from("financial_goals").insert({ color: input.color, current_amount_cents: input.currentAmountCents, name: input.name, target_amount_cents: input.targetAmountCents, target_date: input.targetDate, user_id: user.id, workspace_id: workspace.id, created_by_id: user.id });
     if (error?.code === "23505") throw new Error("Já existe um objetivo com este nome.");
     if (error) throw new Error("Não foi possível criar o objetivo.");
   }

@@ -59,6 +59,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
       occurred_on: input.occurredOn,
       payment_method: input.paymentMethod,
       status: input.status,
+      user_id: user.id,
       workspace_id: workspace.id,
       created_by_id: user.id,
     });

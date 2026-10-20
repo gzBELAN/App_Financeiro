@@ -9,10 +9,11 @@ export type FixedExpense = {
   billingDay: number;
   startsOn: string;
   generateUntil: string;
+  categoryId: string | null;
   paymentMethod: Exclude<PaymentMethod, "credit_card">;
   categoryName: string | null;
   isActive: boolean;
-  upcomingEntries: { id: string; occurredOn: string; amountCents: number }[];
+  upcomingEntries: { id: string; occurredOn: string; amountCents: number; status: "pending" | "paid" | "cancelled" }[];
 };
 
 export type CreateFixedExpenseInput = {
@@ -30,4 +31,7 @@ export type CreateFixedExpenseInput = {
 export interface FixedExpenseRepository {
   list(): Promise<FixedExpense[]>;
   create(input: CreateFixedExpenseInput): Promise<void>;
+  update(id: string, input: CreateFixedExpenseInput): Promise<void>;
+  deactivate(id: string): Promise<void>;
+  recordActualAmount(entryId: string, amountCents: number): Promise<void>;
 }

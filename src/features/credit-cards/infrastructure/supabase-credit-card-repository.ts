@@ -33,7 +33,7 @@ export class SupabaseCreditCardRepository implements CreditCardRepository {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("Sua sessão expirou. Entre novamente para continuar.");
 
-    const { error } = await supabase.from("credit_cards").insert({ bank_name: input.bankName, brand: input.brand, closing_day: input.closingDay, color: input.color, credit_limit_cents: input.creditLimitCents, due_day: input.dueDay, name: input.name, workspace_id: workspace.id, created_by_id: user.id });
+    const { error } = await supabase.from("credit_cards").insert({ bank_name: input.bankName, brand: input.brand, closing_day: input.closingDay, color: input.color, credit_limit_cents: input.creditLimitCents, due_day: input.dueDay, name: input.name, user_id: user.id, workspace_id: workspace.id, created_by_id: user.id });
     if (error?.code === "23505") throw new Error("Já existe um cartão com este nome.");
     if (error) throw new Error("Não foi possível cadastrar o cartão.");
   }

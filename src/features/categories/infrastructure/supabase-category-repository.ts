@@ -48,6 +48,7 @@ export class SupabaseCategoryRepository implements CategoryRepository {
       color: input.color,
       icon: input.icon || null,
       name: input.name,
+      user_id: user.id,
       workspace_id: workspace.id,
       created_by_id: user.id,
     });
