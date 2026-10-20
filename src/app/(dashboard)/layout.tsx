@@ -7,10 +7,5 @@ type DashboardLayoutProperties = Readonly<{
 }>;
 
 export default function DashboardLayout({ children }: DashboardLayoutProperties) {
-  return (
-    <div className="min-h-screen bg-muted/30">
-      <AppNavigation />
-      {children}
-    </div>
-  );
+  return <AppNavigation>{children}</AppNavigation>;
 }

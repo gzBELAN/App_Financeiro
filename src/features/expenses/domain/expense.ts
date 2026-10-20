@@ -1,6 +1,7 @@
 export const PAYMENT_METHODS = ["cash", "debit_card", "credit_card", "pix", "bank_transfer", "boleto", "other"] as const;
 
 export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+export type EntryKind = "expense" | "income";
 
 export type Expense = {
   id: string;
@@ -13,6 +14,7 @@ export type Expense = {
   paymentMethod: PaymentMethod;
   notes: string | null;
   status: "pending" | "paid" | "cancelled";
+  kind: EntryKind;
 };
 
 export type ExpenseInput = {
@@ -23,6 +25,7 @@ export type ExpenseInput = {
   paymentMethod: PaymentMethod;
   notes?: string;
   status: "pending" | "paid";
+  kind: EntryKind;
 };
 
 export type UpdateExpenseInput = ExpenseInput & { id: string };

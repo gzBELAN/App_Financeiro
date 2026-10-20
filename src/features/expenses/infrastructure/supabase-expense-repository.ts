@@ -11,6 +11,7 @@ type ExpenseRow = {
   payment_method: Expense["paymentMethod"];
   notes: string | null;
   status: Expense["status"];
+  kind: Expense["kind"];
   categories: { name: string; color: string } | null;
 };
 
@@ -20,8 +21,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
     const workspace = await getActiveWorkspace();
     const { data, error } = await supabase
       .from("financial_entries")
-      .select("id, description, amount_cents, occurred_on, category_id, payment_method, notes, status, categories(name, color)")
-      .eq("kind", "expense")
+      .select("id, description, amount_cents, occurred_on, category_id, payment_method, notes, status, kind, categories(name, color)")
       .eq("workspace_id", workspace.id)
       .is("installment_purchase_id", null)
       .is("recurring_rule_id", null)
@@ -37,6 +37,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
       categoryName: expense.categories?.name ?? null,
       description: expense.description,
       id: expense.id,
+      kind: expense.kind,
       notes: expense.notes,
       occurredOn: expense.occurred_on,
       paymentMethod: expense.payment_method,
@@ -54,7 +55,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
       amount_cents: input.amountCents,
       category_id: input.categoryId || null,
       description: input.description,
-      kind: "expense",
+      kind: input.kind,
       notes: input.notes || null,
       occurred_on: input.occurredOn,
       payment_method: input.paymentMethod,
@@ -74,11 +75,12 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
       amount_cents: input.amountCents,
       category_id: input.categoryId || null,
       description: input.description,
+      kind: input.kind,
       notes: input.notes || null,
       occurred_on: input.occurredOn,
       payment_method: input.paymentMethod,
       status: input.status,
-    }).eq("id", input.id).eq("kind", "expense").eq("workspace_id", workspace.id);
+    }).eq("id", input.id).eq("workspace_id", workspace.id);
 
     if (error) throw new Error("Não foi possível atualizar a despesa.");
   }
@@ -86,7 +88,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
   async delete(id: string): Promise<void> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
-    const { error } = await supabase.from("financial_entries").delete().eq("id", id).eq("kind", "expense").eq("workspace_id", workspace.id);
+    const { error } = await supabase.from("financial_entries").delete().eq("id", id).eq("workspace_id", workspace.id);
     if (error) throw new Error("Não foi possível excluir a despesa.");
   }
 }

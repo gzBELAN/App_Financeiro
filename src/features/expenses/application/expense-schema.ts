@@ -10,6 +10,7 @@ export const expenseSchema = z.object({
   occurredOn: z.string().date("Informe uma data válida."),
   paymentMethod: z.enum(PAYMENT_METHODS, { error: "Selecione uma forma de pagamento válida." }),
   status: z.enum(["pending", "paid"]),
+  kind: z.enum(["expense", "income"]),
 });
 
 export function parseCurrencyToCents(value: string) {
