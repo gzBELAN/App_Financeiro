@@ -51,7 +51,9 @@ O aplicativo usa um menu lateral responsivo: em telas grandes ele pode ser recol
 ### Controles, participantes e configurações
 
 - Criação de múltiplos controles financeiros por conta.
+- Novas contas começam sem controle: podem criar um quando desejarem ou aguardar o compartilhamento de um controle existente.
 - Seleção do controle ativo; dados permanecem isolados por `workspace_id`.
+- Seletor de controle financeiro ativo no topo das páginas autenticadas, permitindo trocar de contexto sem abrir a tela de compartilhamento.
 - Compartilhamento por e-mail com papéis **proprietário**, **editor** e **visualizador**.
 - Alteração de papel, remoção de participante e transferência de propriedade pelo proprietário.
 - Exclusão de controle financeiro com todos os seus dados, desde que exista outro controle acessível para a conta.

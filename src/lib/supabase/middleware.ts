@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 
 const PROTECTED_PATHS = ["/dashboard", "/expenses", "/categories", "/cards", "/installments", "/subscriptions", "/fixed-expenses", "/goals", "/reports", "/workspace", "/settings"];
 const AUTH_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password"];
+const WORKSPACE_FREE_PATHS = ["/workspace", "/settings"];
 
 function hasPathPrefix(pathname: string, paths: string[]) {
   return paths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
@@ -48,6 +49,16 @@ export async function updateSession(request: NextRequest) {
     redirectUrl.pathname = "/dashboard";
     redirectUrl.search = "";
     return NextResponse.redirect(redirectUrl);
+  }
+
+  if (user && hasPathPrefix(pathname, PROTECTED_PATHS) && !hasPathPrefix(pathname, WORKSPACE_FREE_PATHS)) {
+    const { count } = await supabase.from("workspace_members").select("workspace_id", { count: "exact", head: true });
+    if (!count) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/workspace";
+      redirectUrl.search = "";
+      return NextResponse.redirect(redirectUrl);
+    }
   }
 
   return response;

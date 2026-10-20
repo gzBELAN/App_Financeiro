@@ -6,6 +6,8 @@ Um controle financeiro pode ter várias pessoas. Cada pessoa entra com sua próp
 
 Uma pessoa também pode participar de mais de um controle, sem misturar os dados entre eles.
 
+Uma conta recém-criada recebe somente o perfil: nenhum controle financeiro é criado automaticamente. A pessoa pode criar o primeiro controle na tela **Compartilhar** ou aguardar que um proprietário a adicione a um controle existente.
+
 ## Papéis
 
 | Papel | Leitura | Alterar dados financeiros | Administrar participantes e controle |
@@ -51,6 +53,7 @@ O `workspace_id` passa a ser o limite de isolamento financeiro. O usuário auten
 8. Confirme que as tabelas financeiras possuem `workspace_id` e que as políticas RLS foram atualizadas.
 9. Depois, abra `workspace_settings_management.sql`, copie seu conteúdo completo e execute-o uma única vez.
 10. Confirme que as funções `create_financial_workspace`, `update_workspace_member_role`, `remove_workspace_member`, `transfer_workspace_ownership` e `delete_financial_workspace` estão disponíveis.
+11. Confirme que a função `handle_new_user` cria apenas a linha em `profiles`, sem inserir `financial_workspaces` ou `workspace_members`.
 
 Para um projeto criado do zero, aplique nesta ordem: `descricao_consulta.sql`, `shared_financial_workspaces.sql` e `workspace_settings_management.sql`.
 
@@ -63,6 +66,8 @@ Para um projeto criado do zero, aplique nesta ordem: `descricao_consulta.sql`, `
 5. A pessoa adicionada entra com a própria conta e seleciona o controle desejado.
 6. O proprietário pode alterar a permissão, remover a pessoa ou transferir a propriedade para um participante existente.
 7. A partir desse momento, os módulos mostram somente os dados do controle escolhido.
+
+O seletor de controle ativo também fica disponível no topo das páginas autenticadas. Assim, a pessoa pode alternar rapidamente entre controles aos quais tem acesso sem retornar à tela de compartilhamento.
 
 ## Ciclo de vida de controles
 
