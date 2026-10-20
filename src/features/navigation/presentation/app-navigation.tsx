@@ -32,7 +32,7 @@ const navigationItems: NavigationItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/expenses", label: "Lançamentos", icon: ReceiptText },
   { href: "/categories", label: "Categorias", icon: Tags },
-  { href: "/cards", label: "Cartões", icon: CreditCard },
+  { href: "/cards", label: "Bancos e contas", icon: CreditCard },
   { href: "/subscriptions", label: "Assinaturas", icon: Repeat2 },
   { href: "/fixed-expenses", label: "Contas fixas", icon: WalletCards },
   { href: "/goals", label: "Metas", icon: Target },

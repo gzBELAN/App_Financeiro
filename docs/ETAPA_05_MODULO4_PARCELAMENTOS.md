@@ -8,7 +8,7 @@ Parcelamentos são criados por uma função PostgreSQL transacional: `public.cre
 
 O valor em centavos é dividido entre as parcelas sem perder precisão. Quando houver resto, os centavos são distribuídos nas primeiras parcelas. Por exemplo, `R$ 100,00` em `3x` resulta em `R$ 33,34`, `R$ 33,33` e `R$ 33,33`.
 
-As datas futuras preservam o dia da compra sempre que possível. Se um mês tiver menos dias, a parcela é criada no último dia daquele mês. Cada parcela é um `financial_entry` pendente, associado à compra e ao cartão.
+As datas futuras preservam o dia da compra sempre que possível. Se um mês tiver menos dias, a parcela é criada no último dia daquele mês. Cada parcela é um `financial_entry` pendente, associado à compra e ao cartão. Como os cartões são vinculados a uma conta bancária, a instituição de origem da compra também fica determinada por esse vínculo.
 
 A função SQL de parcelamento recebe o controle financeiro ativo e valida a permissão de editor antes de criar a compra e as parcelas.
 
@@ -51,7 +51,7 @@ O script usa comandos seguros de recriação para funções e views, mas tipos e
 ## Teste manual sugerido — não executado
 
 1. Aplique manualmente a função SQL conforme a seção anterior.
-2. Cadastre um cartão ativo em `/cards`.
+2. Em `/cards`, cadastre uma conta bancária e um cartão de crédito ativo vinculado a ela.
 3. Acesse `http://localhost:3000/expenses`.
 4. Registre uma compra de `R$ 1.200,00` em `12` parcelas.
 5. Confira que o cronograma contém parcelas de `1/12` a `12/12` e que o total é `R$ 1.200,00`.

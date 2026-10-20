@@ -41,7 +41,9 @@ O aplicativo usa um menu lateral responsivo: em telas grandes ele pode ser recol
 - Categorias personalizadas com nome, cor e ícone opcional.
 - Lançamentos avulsos de receita ou despesa, com descrição, valor, data, categoria, pagamento, status e observações.
 - Registro de saldo inicial como lançamento de receita datado.
-- Múltiplos cartões de crédito com banco, bandeira, limite, fechamento, vencimento e cor.
+- Contas bancárias com saldo atual, instituição, tipo e cor; cada cartão é vinculado a uma conta.
+- Cartões de crédito, débito ou múltiplos, com bandeira, limite, fechamento, vencimento e cor.
+- Salário líquido mensal planejado, com comparação no dashboard entre salário, contas/cartões do mês e a sobra prevista.
 - Compras parceladas com geração automática das parcelas futuras e adiantamento de parcelas selecionadas, com desconto opcional distribuído entre elas.
 - Assinaturas recorrentes com frequências mensal, trimestral, semestral ou anual, edição, encerramento, reativação e exclusão segura.
 - Contas fixas recorrentes, como água, energia, aluguel e internet, com valor previsto e registro do valor real pago em cada competência.
@@ -211,7 +213,8 @@ As credenciais são encontradas em **Supabase > Project Settings > API**.
 4. Para um projeto novo, execute o script completo uma única vez.
 5. Em seguida, execute `supabase/migrations/shared_financial_workspaces.sql` uma única vez.
 6. Por fim, execute `supabase/migrations/workspace_settings_management.sql` uma única vez.
-7. Confira tabelas, funções, view e políticas RLS no painel do Supabase.
+7. Execute `supabase/migrations/bank_accounts_and_salary.sql` uma única vez.
+8. Confira tabelas, funções, view e políticas RLS no painel do Supabase.
 
 ### 4. Configurar autenticação
 

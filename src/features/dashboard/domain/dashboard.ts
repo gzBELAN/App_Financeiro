@@ -4,6 +4,8 @@ export type DashboardFilters = {
 
 export type DashboardData = {
   balanceCents: number;
+  monthlySalaryCents: number;
+  salaryRemainingCents: number;
   monthlyExpenseCents: number;
   futureExpenseCents: number;
   pendingExpenseCents: number;

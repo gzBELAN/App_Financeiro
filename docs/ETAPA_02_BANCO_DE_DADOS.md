@@ -16,7 +16,8 @@
 ```mermaid
 erDiagram
     PROFILES ||--o{ CATEGORIES : owns
-    PROFILES ||--o{ CREDIT_CARDS : owns
+  PROFILES ||--o{ BANK_ACCOUNTS : owns
+  BANK_ACCOUNTS ||--o{ CREDIT_CARDS : provides
     PROFILES ||--o{ INSTALLMENT_PURCHASES : owns
     PROFILES ||--o{ RECURRING_RULES : owns
     PROFILES ||--o{ FINANCIAL_ENTRIES : owns
@@ -26,6 +27,7 @@ erDiagram
     CATEGORIES o|--o{ FINANCIAL_ENTRIES : classifies
     CREDIT_CARDS ||--o{ INSTALLMENT_PURCHASES : finances
     CREDIT_CARDS o|--o{ RECURRING_RULES : charges
+    BANK_ACCOUNTS o|--o{ FINANCIAL_ENTRIES : receives
     CREDIT_CARDS o|--o{ FINANCIAL_ENTRIES : pays
     INSTALLMENT_PURCHASES ||--o{ FINANCIAL_ENTRIES : creates
     RECURRING_RULES ||--o{ FINANCIAL_ENTRIES : generates
@@ -42,9 +44,18 @@ erDiagram
       text name
       char color
     }
+    BANK_ACCOUNTS {
+      uuid id PK
+      uuid workspace_id FK
+      text bank_name
+      text name
+      text account_type
+      bigint current_balance_cents
+    }
     CREDIT_CARDS {
       uuid id PK
       uuid user_id FK
+      uuid bank_account_id FK
       text name
       bigint credit_limit_cents
       smallint closing_day
@@ -72,6 +83,7 @@ erDiagram
       text kind
       bigint amount_cents
       date occurred_on
+      uuid bank_account_id FK
       uuid credit_card_id FK
       uuid installment_purchase_id FK
       uuid recurring_rule_id FK
@@ -92,11 +104,12 @@ erDiagram
 | `profiles` | Preferências do usuário autenticado. | `id`, `display_name`, `currency_code`, `theme_preference`. |
 | `financial_workspaces` | Controle financeiro pessoal ou compartilhado. | `id`, `name`, `owner_profile_id`, `currency_code`. |
 | `workspace_members` | Participantes e papel dentro do controle. | `workspace_id`, `profile_id`, `role`. |
+| `bank_accounts` | Conta bancária, carteira ou instituição do controle. | `workspace_id`, `bank_name`, `name`, `account_type`, `current_balance_cents`, `is_active`. |
 | `categories` | Classificação pessoal de despesas. | `user_id`, `name`, `color`, `icon`. |
-| `credit_cards` | Dados de cartão e ciclo de cobrança. | `bank_name`, `brand`, `credit_limit_cents`, `closing_day`, `due_day`, `color`. |
+| `credit_cards` | Cartão associado a uma conta e seu ciclo de cobrança. | `bank_account_id`, `bank_name`, `card_type`, `brand`, `credit_limit_cents`, `closing_day`, `due_day`, `color`. |
 | `installment_purchases` | Compra original que originou parcelas. | `credit_card_id`, `category_id`, `total_amount_cents`, `installment_count`, `purchase_date`. |
 | `recurring_rules` | Regra de assinatura ou conta fixa. | `rule_type`, `amount_cents`, `frequency`, `billing_day`, `generate_until`, `is_active`. |
-| `financial_entries` | Movimentação individual: despesa, receita, parcela ou recorrência. | `kind`, `amount_cents`, `occurred_on`, `payment_method`, `status`, vínculos de origem. |
+| `financial_entries` | Movimentação individual: despesa, receita, parcela ou recorrência. | `kind`, `amount_cents`, `occurred_on`, `bank_account_id`, `payment_method`, `status`, vínculos de origem. |
 | `financial_goals` | Objetivo e progresso financeiro. | `name`, `target_amount_cents`, `current_amount_cents`, `target_date`. |
 | `credit_card_invoice_items` | View de consulta das faturas calculadas. | `credit_card_id`, `amount_cents`, `due_date`, dados de parcela. |
 
@@ -109,6 +122,8 @@ erDiagram
 | `entry_status` | `pending`, `paid`, `cancelled` |
 | `recurrence_frequency` | `monthly`, `quarterly`, `semiannual`, `annual` |
 | `recurring_rule_type` | `subscription`, `fixed_expense` |
+| `bank_account_type` | `checking`, `savings`, `cash`, `investment`, `other` |
+| `card_type` | `credit`, `debit`, `credit_debit` |
 
 ## 4. Integridade, índices e RLS
 
@@ -133,6 +148,7 @@ erDiagram
 - Cada tabela privada recebe RLS habilitada.
 - Leitura exige vínculo em `workspace_members`; escrita exige papel proprietário ou editor.
 - A migração incremental `shared_financial_workspaces.sql` atualiza o modelo original para o compartilhamento.
+- A migração `bank_accounts_and_salary.sql` cria contas bancárias, associa cartões e lançamentos a contas e adiciona `monthly_salary_cents` ao controle financeiro.
 - A view de fatura utiliza `security_invoker = true`; portanto, respeita as permissões do usuário que a consulta.
 
 ## 5. Script SQL entregue
@@ -141,6 +157,8 @@ Arquivo criado:
 
 - `supabase/migrations/descricao_consulta.sql`
 - `supabase/migrations/shared_financial_workspaces.sql`
+- `supabase/migrations/workspace_settings_management.sql`
+- `supabase/migrations/bank_accounts_and_salary.sql`
 
 Ele contém, de forma completa:
 
@@ -168,8 +186,9 @@ Quando chegar a Etapa 4 ou quando for solicitado configurar o banco, faça manua
 7. Abra localmente o arquivo `supabase/migrations/descricao_consulta.sql`.
 8. Copie todo o conteúdo do arquivo, cole no editor SQL e clique em **Run**.
 9. Em uma nova consulta, execute todo o conteúdo de `supabase/migrations/shared_financial_workspaces.sql`.
-10. Confirme no menu **Table Editor** que as tabelas foram criadas, incluindo `financial_workspaces` e `workspace_members`.
-11. Em **Authentication > Providers**, mantenha **Email** habilitado para a Etapa 4. Não altere provedores adicionais sem uma necessidade definida.
+10. Em novas consultas, execute `workspace_settings_management.sql` e, depois, `bank_accounts_and_salary.sql`.
+11. Confirme no menu **Table Editor** que as tabelas foram criadas, incluindo `financial_workspaces`, `workspace_members` e `bank_accounts`.
+12. Em **Authentication > Providers**, mantenha **Email** habilitado para a Etapa 4. Não altere provedores adicionais sem uma necessidade definida.
 
 ### Verificação manual recomendada
 
@@ -202,8 +221,8 @@ Após executar o script no Supabase, confira:
 
 ### Complementos: controles, participantes e configurações
 
-Depois de aplicar o script base, aplique `supabase/migrations/shared_financial_workspaces.sql` e, depois, `supabase/migrations/workspace_settings_management.sql`.
+Depois de aplicar o script base, aplique `supabase/migrations/shared_financial_workspaces.sql`, `supabase/migrations/workspace_settings_management.sql` e `supabase/migrations/bank_accounts_and_salary.sql`, nesta ordem.
 
 A segunda migração cria workspaces, vínculos de participantes, RLS e funções financeiras adaptadas ao controle ativo. A terceira adiciona funções protegidas para criar e excluir controles, alterar permissões, remover participantes, transferir propriedade e limpar dados antes da exclusão de conta.
 
-Consulte `docs/ETAPA_06_CONTROLE_COMPARTILHADO.md` para o modelo, os papéis e o teste manual.
+Consulte `docs/ETAPA_06_CONTROLE_COMPARTILHADO.md` para o modelo, os papéis e o teste manual. A última migração adiciona contas, tipos de cartão, vínculo de lançamentos a contas e o salário mensal planejado por controle.

@@ -11,6 +11,8 @@ export type Expense = {
   categoryId: string | null;
   categoryName: string | null;
   categoryColor: string | null;
+  bankAccountId: string | null;
+  bankAccountName: string | null;
   paymentMethod: PaymentMethod;
   notes: string | null;
   status: "pending" | "paid" | "cancelled";
@@ -25,6 +27,7 @@ export type ExpenseInput = {
   amountCents: number;
   occurredOn: string;
   categoryId?: string;
+  bankAccountId?: string;
   paymentMethod: PaymentMethod;
   notes?: string;
   status: "pending" | "paid";

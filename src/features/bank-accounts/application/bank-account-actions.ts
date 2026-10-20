@@ -1,0 +1,16 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { z } from "zod";
+import { parseCurrencyToCents } from "@/features/expenses/application/expense-schema";
+import { SupabaseBankAccountRepository } from "@/features/bank-accounts/infrastructure/supabase-bank-account-repository";
+
+type State = { error?: string; success?: string };
+const repository = new SupabaseBankAccountRepository();
+const schema = z.object({ name: z.string().trim().min(1, "Informe o nome da conta.").max(80), bankName: z.string().trim().min(1, "Informe o banco.").max(80), accountType: z.enum(["checking", "savings", "cash", "investment", "other"]), color: z.string().regex(/^#[0-9A-Fa-f]{6}$/), currentBalance: z.string().trim().min(1, "Informe o saldo inicial.") });
+function refresh() { revalidatePath("/cards"); revalidatePath("/expenses"); revalidatePath("/dashboard"); }
+function parse(formData: FormData) { const result = schema.safeParse({ accountType: String(formData.get("accountType") ?? "checking"), bankName: String(formData.get("bankName") ?? ""), color: String(formData.get("color") ?? ""), currentBalance: String(formData.get("currentBalance") ?? ""), name: String(formData.get("name") ?? "") }); if (!result.success) return { error: result.error.issues[0]?.message ?? "Dados inválidos." } as const; const currentBalanceCents = parseCurrencyToCents(result.data.currentBalance); if (currentBalanceCents === null) return { error: "Informe um saldo válido." } as const; return { data: { ...result.data, currentBalanceCents } } as const; }
+export async function createBankAccount(_: State, formData: FormData): Promise<State> { const input = parse(formData); if ("error" in input) return input; try { await repository.create(input.data); refresh(); return { success: "Conta cadastrada com sucesso." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; } }
+export async function updateBankAccount(_: State, formData: FormData): Promise<State> { const id = String(formData.get("id") ?? ""); const input = parse(formData); if (!id) return { error: "Conta inválida." }; if ("error" in input) return input; try { await repository.update({ ...input.data, id }); refresh(); return { success: "Conta atualizada com sucesso." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; } }
+export async function archiveBankAccount(id: string): Promise<State> { try { await repository.archive(id); refresh(); return { success: "Conta arquivada." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; } }
+export async function updateMonthlySalary(_: State, formData: FormData): Promise<State> { const amount = parseCurrencyToCents(String(formData.get("monthlySalary") ?? "")); if (amount === null || amount < 0) return { error: "Informe um salário válido." }; try { await repository.updateMonthlySalary(amount); refresh(); return { success: "Salário mensal atualizado." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; } }

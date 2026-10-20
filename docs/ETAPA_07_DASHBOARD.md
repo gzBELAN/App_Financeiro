@@ -4,7 +4,7 @@
 
 ## Decisões arquiteturais
 
-O dashboard usa um repositório dedicado para consolidar leituras de `financial_entries` e `financial_goals`. Nenhuma agregação é persistida: KPIs e gráficos são derivados dos lançamentos atuais, evitando tabelas de resumo que possam divergir dos dados financeiros.
+O dashboard usa um repositório dedicado para consolidar leituras de `financial_entries`, `financial_goals` e da configuração de salário do controle em `financial_workspaces`. Nenhuma agregação é persistida: KPIs e gráficos são derivados dos lançamentos atuais, evitando tabelas de resumo que possam divergir dos dados financeiros.
 
 O filtro de período é baseado em query string (`/dashboard?month=YYYY-MM`), tornando a visualização compartilhável e recarregável. A página permanece Server Component e entrega os dados ao componente de gráficos, que é Client Component devido ao Recharts.
 
@@ -22,6 +22,9 @@ Todos os cálculos também são filtrados pelo controle financeiro ativo, evitan
 
 | Indicador | Regra |
 | --- | --- |
+| Salário mensal | Valor líquido planejado no controle financeiro ativo. |
+| Gastos do mês | Todas as despesas, pagas ou pendentes, no período; inclui contas, cartões e parcelas. |
+| Sobra do salário | Salário mensal menos gastos do mês. Pode ser negativo. |
 | Saldo atual | Receitas pagas menos despesas pagas até o fim do período selecionado. |
 | Despesas do mês | Despesas pagas e pendentes dentro do período. |
 | Despesas futuras | Despesas após o último dia do período. |
@@ -46,9 +49,10 @@ Todos os cálculos também são filtrados pelo controle financeiro ativo, evitan
 1. Inicie a aplicação manualmente com `npm run dev`.
 2. Entre com uma conta que tenha categorias, despesas, cartões e objetivos.
 3. Acesse `http://localhost:3000/dashboard`.
-4. Confirme os quatro KPIs e os gráficos.
-5. Selecione outro mês e clique em **Filtrar**.
-6. Confirme que os dados do período são atualizados e que a URL contém o parâmetro `month`.
+4. Em `/cards`, informe o salário mensal planejado e registre contas, cartões ou lançamentos no mês.
+5. Confirme os seis KPIs, especialmente o comparativo entre salário, gastos e sobra prevista.
+6. Selecione outro mês e clique em **Filtrar**.
+7. Confirme que os dados do período são atualizados e que a URL contém o parâmetro `month`.
 
 ## Próxima etapa
 

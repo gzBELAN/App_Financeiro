@@ -1,8 +1,13 @@
+export const CARD_TYPES = ["credit", "debit", "credit_debit"] as const;
+export type CardType = (typeof CARD_TYPES)[number];
+
 export type CreditCard = {
   id: string;
+  bankAccountId: string;
   name: string;
   bankName: string;
   brand: string;
+  cardType: CardType;
   creditLimitCents: number;
   closingDay: number;
   dueDay: number;

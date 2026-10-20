@@ -68,8 +68,9 @@ Corrija qualquer falha antes de continuar. Esses comandos não foram executados 
 5. Clique em **Run**.
 6. Em seguida, aplique `supabase/migrations/shared_financial_workspaces.sql` para habilitar controles compartilhados.
 7. Por fim, aplique `supabase/migrations/workspace_settings_management.sql` para habilitar múltiplos controles, administração de participantes e exclusão segura.
-8. Consulte `docs/ETAPA_06_CONTROLE_COMPARTILHADO.md` para validar os papéis e o fluxo de participantes.
-9. Abra **Table Editor** e confirme as tabelas:
+8. Aplique `supabase/migrations/bank_accounts_and_salary.sql` para habilitar bancos, contas, cartões vinculados e salário mensal planejado.
+9. Consulte `docs/ETAPA_06_CONTROLE_COMPARTILHADO.md` para validar os papéis e o fluxo de participantes.
+10. Abra **Table Editor** e confirme as tabelas:
    - `profiles`
    - `categories`
    - `credit_cards`
@@ -77,7 +78,8 @@ Corrija qualquer falha antes de continuar. Esses comandos não foram executados 
    - `recurring_rules`
    - `financial_entries`
    - `financial_goals`
-10. Confirme também a view `credit_card_invoice_items`, as funções de parcelamento/recorrência e as funções de gerenciamento de controles.
+   - `bank_accounts`
+11. Confirme também a view `credit_card_invoice_items`, as funções de parcelamento/recorrência e as funções de gerenciamento de controles.
 
 > Para banco que já recebeu scripts parciais durante o desenvolvimento, não cole o arquivo todo novamente: execute somente os blocos de função ainda não aplicados, conforme os documentos dos módulos. Para a produção final, a abordagem recomendada é criar um projeto novo e aplicar o script completo uma única vez.
 
@@ -220,7 +222,7 @@ Após a integração, cada `git push` para `main` gera deploy de produção. Pus
 - [ ] RLS impede que um usuário acesse dados de outro.
 - [ ] Receitas, despesas e compras parceladas funcionam em **Lançamentos**.
 - [ ] Adiantamento de parcelas com e sem desconto funciona.
-- [ ] Cartões, assinaturas, contas fixas e objetivos permitem arquivar/encerrar, reativar e excluir quando seguro.
+- [ ] Bancos e contas permitem cadastrar contas, saldo inicial e salário mensal; cartões vinculados permitem arquivar/reativar e excluir quando seguro.
 - [ ] Criação de controles, permissões, remoção de participantes e transferência de propriedade funcionam.
 - [ ] Configurações de perfil/aparência funcionam; exclusão de conta é testada apenas em ambiente seguro.
 - [ ] Dashboard e relatórios carregam dados corretos.
@@ -234,7 +236,7 @@ Após a integração, cada `git push` para `main` gera deploy de produção. Pus
 - Etapa 2: banco PostgreSQL, RLS, índices e funções SQL.
 - Etapa 3: estrutura Next.js, TypeScript, Tailwind, ESLint e Prettier.
 - Etapa 4: autenticação Supabase, middleware e rotas protegidas.
-- Etapa 5: categorias, despesas, cartões, parcelamentos, assinaturas, contas fixas e objetivos.
+- Etapa 5: categorias, lançamentos, bancos/contas, cartões vinculados, parcelamentos, assinaturas, contas fixas e objetivos.
 - Etapa 6: dashboard com KPIs, filtro e gráficos.
 - Etapa 7: relatórios e exportação CSV/Excel.
 - Etapa 8: PWA, manifest, service worker e fallback offline.

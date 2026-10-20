@@ -23,12 +23,14 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     const historyStart = monthKey(new Date(Date.UTC(year, month - 7, 1)));
     const historyStartDate = `${historyStart}-01`;
 
-    const [entriesResult, goalsResult] = await Promise.all([
+    const [entriesResult, goalsResult, workspaceResult] = await Promise.all([
       supabase.from("financial_entries").select("id, kind, description, amount_cents, occurred_on, status, categories(name, color), credit_cards(name, color)").eq("workspace_id", workspace.id).neq("status", "cancelled").order("occurred_on", { ascending: false }),
       supabase.from("financial_goals").select("id, name, current_amount_cents, target_amount_cents, color").eq("workspace_id", workspace.id).eq("is_archived", false).order("created_at", { ascending: false }).limit(4),
+      supabase.from("financial_workspaces").select("monthly_salary_cents").eq("id", workspace.id).single(),
     ]);
     if (entriesResult.error) throw new Error("Não foi possível carregar os indicadores financeiros.");
     if (goalsResult.error) throw new Error("Não foi possível carregar os objetivos financeiros.");
+    if (workspaceResult.error) throw new Error("Não foi possível carregar o planejamento mensal.");
 
     const entries = entriesResult.data as unknown as EntryRow[];
     const goals = goalsResult.data as GoalRow[];
@@ -36,6 +38,7 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     const balanceCents = paidEntriesUntilPeriod.reduce((sum, entry) => sum + (entry.kind === "income" ? entry.amount_cents : -entry.amount_cents), 0);
     const monthExpenses = entries.filter((entry) => entry.kind === "expense" && entry.occurred_on >= firstDay && entry.occurred_on <= lastDay);
     const monthlyExpenseCents = monthExpenses.reduce((sum, entry) => sum + entry.amount_cents, 0);
+    const monthlySalaryCents = Number(workspaceResult.data.monthly_salary_cents ?? 0);
     const futureEntries = entries.filter((entry) => entry.kind === "expense" && entry.occurred_on > lastDay);
     const futureExpenseCents = futureEntries.reduce((sum, entry) => sum + entry.amount_cents, 0);
     const pendingExpenseCents = monthExpenses.filter((entry) => entry.status === "pending").reduce((sum, entry) => sum + entry.amount_cents, 0);
@@ -71,7 +74,9 @@ export class SupabaseDashboardRepository implements DashboardRepository {
       goals: goals.map((goal) => ({ color: goal.color, currentCents: goal.current_amount_cents, id: goal.id, name: goal.name, targetCents: goal.target_amount_cents })),
       monthlyEvolution: [...evolution.values()],
       monthlyExpenseCents,
+      monthlySalaryCents,
       pendingExpenseCents,
+      salaryRemainingCents: monthlySalaryCents - monthlyExpenseCents,
       recentEntries: monthExpenses.slice(0, 5).map((entry) => ({ amountCents: entry.amount_cents, categoryColor: entry.categories?.color ?? null, categoryName: entry.categories?.name ?? null, description: entry.description, id: entry.id, occurredOn: entry.occurred_on, status: entry.status })),
     };
   }

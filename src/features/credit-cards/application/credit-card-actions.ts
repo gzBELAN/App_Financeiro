@@ -9,7 +9,7 @@ export type CreditCardActionState = { error?: string; success?: string };
 const repository = new SupabaseCreditCardRepository();
 
 function readInput(formData: FormData) {
-  return parseCreditCardInput({ bankName: String(formData.get("bankName") ?? ""), brand: String(formData.get("brand") ?? ""), closingDay: String(formData.get("closingDay") ?? ""), color: String(formData.get("color") ?? ""), creditLimit: String(formData.get("creditLimit") ?? ""), dueDay: String(formData.get("dueDay") ?? ""), name: String(formData.get("name") ?? "") });
+  return parseCreditCardInput({ bankAccountId: String(formData.get("bankAccountId") ?? ""), bankName: String(formData.get("bankName") ?? ""), brand: String(formData.get("brand") ?? ""), cardType: String(formData.get("cardType") ?? "credit"), closingDay: String(formData.get("closingDay") ?? ""), color: String(formData.get("color") ?? ""), creditLimit: String(formData.get("creditLimit") ?? ""), dueDay: String(formData.get("dueDay") ?? ""), name: String(formData.get("name") ?? "") });
 }
 
 function refreshCards() {

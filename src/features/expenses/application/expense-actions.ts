@@ -12,6 +12,7 @@ const repository = new SupabaseExpenseRepository();
 function readInput(formData: FormData) {
   const validation = expenseSchema.safeParse({
     amount: String(formData.get("amount") ?? ""),
+    bankAccountId: String(formData.get("bankAccountId") ?? ""),
     categoryId: String(formData.get("categoryId") ?? ""),
     description: String(formData.get("description") ?? ""),
     notes: String(formData.get("notes") ?? ""),
