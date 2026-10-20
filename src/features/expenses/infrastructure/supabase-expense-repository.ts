@@ -12,6 +12,9 @@ type ExpenseRow = {
   notes: string | null;
   status: Expense["status"];
   kind: Expense["kind"];
+  installment_purchase_id: string | null;
+  installment_number: number | null;
+  installment_count: number | null;
   categories: { name: string; color: string } | null;
 };
 
@@ -29,9 +32,8 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
     const workspace = await getActiveWorkspace();
     const { data, error } = await supabase
       .from("financial_entries")
-      .select("id, description, amount_cents, occurred_on, category_id, payment_method, notes, status, kind, categories(name, color)")
+      .select("id, description, amount_cents, occurred_on, category_id, payment_method, notes, status, kind, installment_purchase_id, installment_number, installment_count, categories(name, color)")
       .eq("workspace_id", workspace.id)
-      .is("installment_purchase_id", null)
       .is("recurring_rule_id", null)
       .order("occurred_on", { ascending: false })
       .order("created_at", { ascending: false });
@@ -46,6 +48,9 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
       description: expense.description,
       id: expense.id,
       kind: expense.kind,
+      installmentPurchaseId: expense.installment_purchase_id,
+      installmentNumber: expense.installment_number,
+      installmentCount: expense.installment_count,
       notes: expense.notes,
       occurredOn: expense.occurred_on,
       paymentMethod: expense.payment_method,

@@ -52,3 +52,19 @@ export async function advanceInstallments(_: InstallmentActionState, formData: F
     return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." };
   }
 }
+
+export async function updateInstallmentPurchase(_: InstallmentActionState, formData: FormData): Promise<InstallmentActionState> {
+  const id = String(formData.get("id") ?? "");
+  const description = String(formData.get("description") ?? "").trim();
+  const categoryId = String(formData.get("categoryId") ?? "");
+  const notes = String(formData.get("notes") ?? "").trim();
+  if (!id || !description || description.length > 200) return { error: "Informe uma descrição válida para a compra." };
+  if (categoryId && !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(categoryId)) return { error: "Categoria inválida." };
+  if (notes.length > 2000) return { error: "As observações devem ter no máximo 2.000 caracteres." };
+  try { await repository.update({ categoryId: categoryId || undefined, description, id, notes: notes || undefined }); refreshInstallments(); return { success: "Compra parcelada atualizada. Parcelas pendentes foram sincronizadas." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+}
+
+export async function deleteInstallmentPurchase(id: string): Promise<InstallmentActionState> {
+  if (!id) return { error: "Compra parcelada inválida." };
+  try { await repository.delete(id); refreshInstallments(); return { success: "Compra parcelada excluída." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+}

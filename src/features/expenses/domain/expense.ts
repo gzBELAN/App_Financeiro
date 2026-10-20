@@ -15,6 +15,9 @@ export type Expense = {
   notes: string | null;
   status: "pending" | "paid" | "cancelled";
   kind: EntryKind;
+  installmentPurchaseId: string | null;
+  installmentNumber: number | null;
+  installmentCount: number | null;
 };
 
 export type ExpenseInput = {

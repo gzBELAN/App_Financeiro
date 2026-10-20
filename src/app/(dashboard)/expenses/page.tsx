@@ -16,5 +16,5 @@ export default async function ExpensesPage() {
   ]);
 
   const categoryOptions = categories.map(({ id, name }) => ({ id, name }));
-  return <main className="container space-y-10 py-8"><header><p className="text-sm font-medium text-primary">Movimentações</p><h1 className="mt-1 text-3xl font-bold tracking-tight">Lançamentos</h1><p className="mt-2 text-muted-foreground">Registre receitas, saldo inicial, despesas avulsas e compras parceladas em um só lugar.</p></header><ExpenseManager categories={categoryOptions} expenses={expenses} /><div className="border-t pt-10"><InstallmentManagerV2 cards={cards.filter((card) => card.isActive).map(({ id, name }) => ({ id, name }))} categories={categoryOptions} purchases={purchases} /></div></main>;
+  return <main className="container space-y-10 py-8"><header><p className="text-sm font-medium text-primary">Movimentações</p><h1 className="mt-1 text-3xl font-bold tracking-tight">Lançamentos</h1><p className="mt-2 text-muted-foreground">Registre receitas, saldo inicial, despesas avulsas e compras parceladas em um só lugar.</p></header><ExpenseManager cards={cards.filter((card) => card.isActive).map(({ id, name }) => ({ id, name }))} categories={categoryOptions} expenses={expenses} /><div className="border-t pt-10"><InstallmentManagerV2 categories={categoryOptions} purchases={purchases} /></div></main>;
 }

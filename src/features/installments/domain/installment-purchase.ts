@@ -6,7 +6,9 @@ export type InstallmentPurchase = {
   purchaseDate: string;
   notes: string | null;
   creditCardName: string;
+  creditCardId: string;
   categoryName: string | null;
+  categoryId: string | null;
   installments: Installment[];
 };
 
@@ -35,8 +37,17 @@ export type AdvanceInstallmentsInput = {
   discountCents: number;
 };
 
+export type UpdateInstallmentPurchaseInput = {
+  id: string;
+  description: string;
+  categoryId?: string;
+  notes?: string;
+};
+
 export interface InstallmentPurchaseRepository {
   list(): Promise<InstallmentPurchase[]>;
   create(input: CreateInstallmentPurchaseInput): Promise<void>;
   advance(input: AdvanceInstallmentsInput): Promise<void>;
+  update(input: UpdateInstallmentPurchaseInput): Promise<void>;
+  delete(id: string): Promise<void>;
 }

@@ -1,4 +1,4 @@
-import type { AdvanceInstallmentsInput, CreateInstallmentPurchaseInput, InstallmentPurchase, InstallmentPurchaseRepository } from "@/features/installments/domain/installment-purchase";
+import type { AdvanceInstallmentsInput, CreateInstallmentPurchaseInput, InstallmentPurchase, InstallmentPurchaseRepository, UpdateInstallmentPurchaseInput } from "@/features/installments/domain/installment-purchase";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveWorkspace } from "@/lib/workspaces/active-workspace";
 
@@ -10,7 +10,9 @@ type PurchaseRow = {
   purchase_date: string;
   notes: string | null;
   credit_cards: { name: string } | null;
+  credit_card_id: string;
   categories: { name: string } | null;
+  category_id: string | null;
   financial_entries: { id: string; installment_number: number; installment_count: number; amount_cents: number; occurred_on: string; status: "pending" | "paid" | "cancelled" }[] | null;
 };
 
@@ -18,11 +20,13 @@ export class SupabaseInstallmentPurchaseRepository implements InstallmentPurchas
   async list(): Promise<InstallmentPurchase[]> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
-    const { data, error } = await supabase.from("installment_purchases").select("id, description, total_amount_cents, installment_count, purchase_date, notes, credit_cards(name), categories(name), financial_entries(id, installment_number, installment_count, amount_cents, occurred_on, status)").eq("workspace_id", workspace.id).order("purchase_date", { ascending: false });
+    const { data, error } = await supabase.from("installment_purchases").select("id, description, total_amount_cents, installment_count, purchase_date, notes, credit_card_id, category_id, credit_cards(name), categories(name), financial_entries(id, installment_number, installment_count, amount_cents, occurred_on, status)").eq("workspace_id", workspace.id).order("purchase_date", { ascending: false });
     if (error) throw new Error("Não foi possível carregar os parcelamentos.");
 
     return (data as unknown as PurchaseRow[]).map((purchase) => ({
       categoryName: purchase.categories?.name ?? null,
+      categoryId: purchase.category_id,
+      creditCardId: purchase.credit_card_id,
       creditCardName: purchase.credit_cards?.name ?? "Cartão indisponível",
       description: purchase.description,
       id: purchase.id,
@@ -65,5 +69,24 @@ export class SupabaseInstallmentPurchaseRepository implements InstallmentPurchas
       const { error } = await supabase.from("financial_entries").update({ amount_cents: entry.amount_cents - proportionalDiscount, occurred_on: new Date().toISOString().slice(0, 10), status: "paid" }).eq("id", entry.id).eq("workspace_id", workspace.id).eq("status", "pending");
       if (error) throw new Error("Não foi possível concluir o adiantamento das parcelas.");
     }
+  }
+
+  async update(input: UpdateInstallmentPurchaseInput): Promise<void> {
+    const supabase = await createClient();
+    const workspace = await getActiveWorkspace();
+    const { error } = await supabase.from("installment_purchases").update({ category_id: input.categoryId || null, description: input.description, notes: input.notes || null }).eq("id", input.id).eq("workspace_id", workspace.id);
+    if (error) throw new Error("Não foi possível atualizar a compra parcelada.");
+    const { error: entriesError } = await supabase.from("financial_entries").update({ category_id: input.categoryId || null, description: input.description, notes: input.notes || null }).eq("installment_purchase_id", input.id).eq("workspace_id", workspace.id).eq("status", "pending");
+    if (entriesError) throw new Error("A compra foi atualizada, mas não foi possível atualizar as parcelas pendentes.");
+  }
+
+  async delete(id: string): Promise<void> {
+    const supabase = await createClient();
+    const workspace = await getActiveWorkspace();
+    const { count, error: countError } = await supabase.from("financial_entries").select("id", { count: "exact", head: true }).eq("installment_purchase_id", id).eq("workspace_id", workspace.id).eq("status", "paid");
+    if (countError) throw new Error("Não foi possível verificar o histórico do parcelamento.");
+    if (count) throw new Error("Este parcelamento possui parcelas pagas e não pode ser excluído. Mantenha-o para preservar o histórico.");
+    const { error } = await supabase.from("installment_purchases").delete().eq("id", id).eq("workspace_id", workspace.id);
+    if (error) throw new Error("Não foi possível excluir a compra parcelada.");
   }
 }
