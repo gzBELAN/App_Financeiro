@@ -276,4 +276,56 @@ begin
 end;
 $$;
 
+-- Sincroniza cabeçalho da compra e parcelas ainda pendentes sem alterar o histórico pago.
+create or replace function public.update_installment_purchase(
+  p_workspace_id uuid,
+  p_purchase_id uuid,
+  p_description text,
+  p_category_id uuid,
+  p_notes text default null
+)
+returns void
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  if not public.can_edit_workspace(p_workspace_id) then raise exception 'Editor permission is required'; end if;
+  if char_length(trim(p_description)) not between 1 and 200 then raise exception 'Description must have between 1 and 200 characters'; end if;
+  if p_category_id is not null and not exists (
+    select 1 from public.categories where id = p_category_id and workspace_id = p_workspace_id
+  ) then
+    raise exception 'Category not found in workspace';
+  end if;
+
+  update public.installment_purchases
+  set category_id = p_category_id,
+      description = trim(p_description),
+      notes = nullif(trim(p_notes), '')
+  where id = p_purchase_id
+    and workspace_id = p_workspace_id;
+
+  if not found then raise exception 'Installment purchase not found'; end if;
+
+  update public.financial_entries
+  set category_id = p_category_id,
+      description = trim(p_description),
+      notes = nullif(trim(p_notes), '')
+  where installment_purchase_id = p_purchase_id
+    and workspace_id = p_workspace_id
+    and status = 'pending';
+end;
+$$;
+
+-- As RPCs financeiras nunca devem ser invocadas por sessões anônimas.
+revoke all on function public.update_recurring_rule_and_regenerate(uuid, uuid, text, bigint, uuid, uuid, public.payment_method, public.recurrence_frequency, smallint, date, date, text) from public;
+revoke all on function public.set_recurring_rule_active(uuid, uuid, boolean) from public;
+revoke all on function public.advance_installments(uuid, uuid, uuid[], bigint) from public;
+revoke all on function public.update_installment_purchase(uuid, uuid, text, uuid, text) from public;
+
+grant execute on function public.update_recurring_rule_and_regenerate(uuid, uuid, text, bigint, uuid, uuid, public.payment_method, public.recurrence_frequency, smallint, date, date, text) to authenticated;
+grant execute on function public.set_recurring_rule_active(uuid, uuid, boolean) to authenticated;
+grant execute on function public.advance_installments(uuid, uuid, uuid[], bigint) to authenticated;
+grant execute on function public.update_installment_purchase(uuid, uuid, text, uuid, text) to authenticated;
+
 commit;

@@ -250,6 +250,8 @@ npm run format:check
 npm run build
 ```
 
+O repositório também possui a pipeline gratuita `.github/workflows/ci.yml`, que executa essas verificações em `push` para `main` e em pull requests. A pipeline requer um lockfile npm versionado; após instalar o Node.js localmente, execute `npm install` e versione o `package-lock.json` gerado.
+
 ## Como realizar deploy
 
 O guia detalhado está em [`docs/ETAPA_09_DEPLOY.md`](docs/ETAPA_09_DEPLOY.md).
