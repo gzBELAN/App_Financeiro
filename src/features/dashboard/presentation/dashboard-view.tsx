@@ -7,9 +7,10 @@ import { Bar, BarChart, Cell, Legend, Line, LineChart, Pie, PieChart, Responsive
 import type { DashboardData } from "@/features/dashboard/domain/dashboard";
 
 const DASHBOARD_CARDS_STORAGE_KEY = "app-financeiro-dashboard-cards";
-const DEFAULT_VISIBLE_CARDS = ["salary", "monthly-expenses", "salary-remaining", "balance", "pending"];
 
 type CardIdentifier = "salary" | "monthly-expenses" | "salary-remaining" | "balance" | "future" | "pending";
+
+const DEFAULT_VISIBLE_CARDS: CardIdentifier[] = ["salary", "monthly-expenses", "salary-remaining", "balance", "pending"];
 
 type KpiCardProperties = {
   accent?: string;
