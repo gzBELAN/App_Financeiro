@@ -126,6 +126,8 @@ flowchart LR
 - RLS restringe leitura a participantes e escrita a proprietários ou editores.
 - Valores monetários são persistidos como centavos em `bigint`.
 - Chaves sensíveis não são expostas no cliente.
+- Atualizações de recorrências, encerramentos, reativações e adiantamentos de parcelas são executados por funções transacionais no PostgreSQL.
+- A migration de integridade valida que categoria, cartão, conta, recorrência e parcelamento pertencem ao mesmo controle financeiro do lançamento.
 
 ## Estrutura de pastas
 
@@ -169,6 +171,8 @@ App_Financeiro/
 ```
 
 Cada módulo em `src/features` é dividido em `domain`, `application`, `infrastructure` e `presentation`, conforme a necessidade do recurso.
+
+Os componentes de tela usam nomes públicos sem sufixos de versão. As rotas importam exclusivamente esses pontos de entrada estáveis; a implementação interna pode evoluir sem alterar a API de apresentação.
 
 ## Como executar localmente
 

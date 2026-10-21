@@ -1,6 +1,5 @@
 import type { AdvanceInstallmentsInput, CreateInstallmentPurchaseInput, InstallmentPurchase, InstallmentPurchaseRepository, UpdateInstallmentPurchaseInput } from "@/features/installments/domain/installment-purchase";
 import { createClient } from "@/lib/supabase/server";
-import { getLocalIsoDate } from "@/lib/utils/date";
 import { getActiveWorkspace } from "@/lib/workspaces/active-workspace";
 
 type PurchaseRow = {
@@ -58,18 +57,13 @@ export class SupabaseInstallmentPurchaseRepository implements InstallmentPurchas
   async advance(input: AdvanceInstallmentsInput): Promise<void> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
-    const { data: entries, error: entriesError } = await supabase.from("financial_entries").select("id, amount_cents").eq("workspace_id", workspace.id).eq("installment_purchase_id", input.purchaseId).eq("status", "pending").in("id", input.installmentIds);
-    if (entriesError || !entries || entries.length !== input.installmentIds.length) throw new Error("Não foi possível localizar todas as parcelas pendentes selecionadas.");
-    const totalCents = (entries as { id: string; amount_cents: number }[]).reduce((sum, entry) => sum + entry.amount_cents, 0);
-    if (input.discountCents < 0 || input.discountCents >= totalCents) throw new Error("O desconto deve ser menor que o total das parcelas adiantadas.");
-    const orderedEntries = [...entries as { id: string; amount_cents: number }[]].sort((left, right) => left.id.localeCompare(right.id));
-    let remainingDiscount = input.discountCents;
-    for (const [index, entry] of orderedEntries.entries()) {
-      const proportionalDiscount = index === orderedEntries.length - 1 ? remainingDiscount : Math.floor((entry.amount_cents * input.discountCents) / totalCents);
-      remainingDiscount -= proportionalDiscount;
-      const { error } = await supabase.from("financial_entries").update({ amount_cents: entry.amount_cents - proportionalDiscount, occurred_on: getLocalIsoDate(), status: "paid" }).eq("id", entry.id).eq("workspace_id", workspace.id).eq("status", "pending");
-      if (error) throw new Error("Não foi possível concluir o adiantamento das parcelas.");
-    }
+    const { error } = await supabase.rpc("advance_installments", {
+      p_discount_cents: input.discountCents,
+      p_installment_ids: input.installmentIds,
+      p_purchase_id: input.purchaseId,
+      p_workspace_id: workspace.id,
+    });
+    if (error) throw new Error("Não foi possível concluir o adiantamento das parcelas.");
   }
 
   async update(input: UpdateInstallmentPurchaseInput): Promise<void> {

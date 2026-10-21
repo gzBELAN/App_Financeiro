@@ -134,4 +134,146 @@ create index if not exists financial_entries_workspace_card_occurred_on_idx
   on public.financial_entries (workspace_id, credit_card_id, occurred_on desc)
   where credit_card_id is not null;
 
+-- Atualiza regra e projeções futuras em uma única transação.
+create or replace function public.update_recurring_rule_and_regenerate(
+  p_rule_id uuid,
+  p_workspace_id uuid,
+  p_description text,
+  p_amount_cents bigint,
+  p_category_id uuid,
+  p_credit_card_id uuid,
+  p_payment_method public.payment_method,
+  p_frequency public.recurrence_frequency,
+  p_billing_day smallint,
+  p_starts_on date,
+  p_generate_until date,
+  p_notes text default null
+)
+returns void
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_rule_type public.recurring_rule_type;
+begin
+  select rule_type into v_rule_type
+  from public.recurring_rules
+  where id = p_rule_id and workspace_id = p_workspace_id and public.can_edit_workspace(workspace_id);
+
+  if not found then raise exception 'Recurring rule not found or editor permission is required'; end if;
+  if p_amount_cents <= 0 then raise exception 'Amount must be greater than zero'; end if;
+  if p_billing_day not between 1 and 31 then raise exception 'Billing day must be between 1 and 31'; end if;
+  if p_generate_until < p_starts_on then raise exception 'Generation end must be on or after the start date'; end if;
+  if v_rule_type = 'fixed_expense' and p_payment_method = 'credit_card' then raise exception 'Fixed expenses cannot use credit card'; end if;
+  if p_category_id is not null and not exists (select 1 from public.categories where id = p_category_id and workspace_id = p_workspace_id) then raise exception 'Category not found in workspace'; end if;
+  if p_credit_card_id is not null and not exists (select 1 from public.credit_cards where id = p_credit_card_id and workspace_id = p_workspace_id and is_active) then raise exception 'Credit card not found in workspace'; end if;
+
+  update public.recurring_rules
+  set amount_cents = p_amount_cents,
+      billing_day = p_billing_day,
+      category_id = p_category_id,
+      credit_card_id = p_credit_card_id,
+      description = trim(p_description),
+      frequency = p_frequency,
+      generate_until = p_generate_until,
+      notes = nullif(trim(p_notes), ''),
+      payment_method = p_payment_method,
+      starts_on = p_starts_on
+  where id = p_rule_id and workspace_id = p_workspace_id;
+
+  delete from public.financial_entries
+  where recurring_rule_id = p_rule_id
+    and workspace_id = p_workspace_id
+    and status = 'pending'
+    and occurred_on >= current_date;
+
+  perform public.generate_recurring_entries(p_rule_id);
+end;
+$$;
+
+create or replace function public.set_recurring_rule_active(
+  p_rule_id uuid,
+  p_workspace_id uuid,
+  p_is_active boolean
+)
+returns void
+language plpgsql
+security invoker
+set search_path = public
+as $$
+begin
+  update public.recurring_rules
+  set is_active = p_is_active
+  where id = p_rule_id
+    and workspace_id = p_workspace_id
+    and public.can_edit_workspace(workspace_id);
+
+  if not found then raise exception 'Recurring rule not found or editor permission is required'; end if;
+
+  if p_is_active then
+    perform public.generate_recurring_entries(p_rule_id);
+  else
+    delete from public.financial_entries
+    where recurring_rule_id = p_rule_id
+      and workspace_id = p_workspace_id
+      and status = 'pending'
+      and occurred_on >= current_date;
+  end if;
+end;
+$$;
+
+create or replace function public.advance_installments(
+  p_workspace_id uuid,
+  p_purchase_id uuid,
+  p_installment_ids uuid[],
+  p_discount_cents bigint
+)
+returns void
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_total_cents bigint;
+  v_count integer;
+begin
+  if not public.can_edit_workspace(p_workspace_id) then raise exception 'Editor permission is required'; end if;
+  if coalesce(array_length(p_installment_ids, 1), 0) = 0 then raise exception 'At least one installment is required'; end if;
+
+  select coalesce(sum(amount_cents), 0), count(*) into v_total_cents, v_count
+  from public.financial_entries
+  where workspace_id = p_workspace_id
+    and installment_purchase_id = p_purchase_id
+    and status = 'pending'
+    and id = any(p_installment_ids);
+
+  if v_count <> array_length(p_installment_ids, 1) then raise exception 'One or more selected installments are unavailable'; end if;
+  if p_discount_cents < 0 or p_discount_cents >= v_total_cents then raise exception 'Discount must be smaller than the selected installment total'; end if;
+
+  with selected_entries as (
+    select id, amount_cents, row_number() over (order by id) as position, count(*) over () as total_rows
+    from public.financial_entries
+    where workspace_id = p_workspace_id
+      and installment_purchase_id = p_purchase_id
+      and status = 'pending'
+      and id = any(p_installment_ids)
+  ), calculated_discounts as (
+    select
+      id,
+      case
+        when position = total_rows then p_discount_cents - coalesce(sum(floor((amount_cents::numeric * p_discount_cents) / v_total_cents)::bigint) over (order by position rows between unbounded preceding and 1 preceding), 0)
+        else floor((amount_cents::numeric * p_discount_cents) / v_total_cents)::bigint
+      end as discount_cents
+    from selected_entries
+  )
+  update public.financial_entries entry
+  set amount_cents = entry.amount_cents - calculated_discounts.discount_cents,
+      occurred_on = current_date,
+      status = 'paid'
+  from calculated_discounts
+  where entry.id = calculated_discounts.id;
+end;
+$$;
+
 commit;

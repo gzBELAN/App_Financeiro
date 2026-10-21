@@ -1,5 +1,7 @@
 # Etapa 2 — Banco de Dados
 
+> **Atualização de integridade:** após os scripts base, aplique também `supabase/migrations/20261021_financial_integrity.sql`. O arquivo adiciona validações de pertencimento ao mesmo controle financeiro, proteção para a exclusão do último controle acessível e operações transacionais para recorrências e adiantamento de parcelas.
+
 > **Status:** concluída (documentação e script manual). Nenhum projeto Supabase foi criado, nenhum script foi executado e nenhum serviço externo foi acessado.
 
 ## 1. Decisões de modelagem

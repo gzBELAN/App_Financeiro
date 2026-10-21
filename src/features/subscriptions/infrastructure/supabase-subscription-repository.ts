@@ -1,6 +1,5 @@
 import type { CreateSubscriptionInput, Subscription, SubscriptionRepository } from "@/features/subscriptions/domain/subscription";
 import { createClient } from "@/lib/supabase/server";
-import { getLocalIsoDate } from "@/lib/utils/date";
 import { getActiveWorkspace } from "@/lib/workspaces/active-workspace";
 
 type RuleRow = {
@@ -28,32 +27,35 @@ export class SupabaseSubscriptionRepository implements SubscriptionRepository {
   async update(id: string, input: CreateSubscriptionInput): Promise<void> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
-    const today = getLocalIsoDate();
-    const { error } = await supabase.from("recurring_rules").update({ amount_cents: input.amountCents, billing_day: input.billingDay, category_id: input.categoryId || null, credit_card_id: input.creditCardId || null, description: input.description, frequency: input.frequency, generate_until: input.generateUntil, notes: input.notes || null, payment_method: input.creditCardId ? "credit_card" : "other", starts_on: input.startsOn }).eq("id", id).eq("workspace_id", workspace.id).eq("rule_type", "subscription");
-    if (error) throw new Error("Não foi possível atualizar a assinatura.");
-    const { error: entriesError } = await supabase.from("financial_entries").delete().eq("recurring_rule_id", id).eq("workspace_id", workspace.id).eq("status", "pending").gte("occurred_on", today);
-    if (entriesError) throw new Error("A assinatura foi atualizada, mas não foi possível recalcular a previsão.");
-    const { error: generationError } = await supabase.rpc("generate_recurring_entries", { p_rule_id: id });
-    if (generationError) throw new Error("A assinatura foi atualizada, mas não foi possível gerar a nova previsão.");
+    const { error } = await supabase.rpc("update_recurring_rule_and_regenerate", {
+      p_amount_cents: input.amountCents,
+      p_billing_day: input.billingDay,
+      p_category_id: input.categoryId || null,
+      p_credit_card_id: input.creditCardId || null,
+      p_description: input.description,
+      p_frequency: input.frequency,
+      p_generate_until: input.generateUntil,
+      p_notes: input.notes || null,
+      p_payment_method: input.creditCardId ? "credit_card" : "other",
+      p_rule_id: id,
+      p_starts_on: input.startsOn,
+      p_workspace_id: workspace.id,
+    });
+    if (error) throw new Error("Não foi possível atualizar a assinatura e recalcular as previsões.");
   }
 
   async deactivate(id: string): Promise<void> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
-    const today = getLocalIsoDate();
-    const { error } = await supabase.from("recurring_rules").update({ is_active: false }).eq("id", id).eq("workspace_id", workspace.id).eq("rule_type", "subscription");
-    if (error) throw new Error("Não foi possível encerrar a assinatura.");
-    const { error: entriesError } = await supabase.from("financial_entries").delete().eq("recurring_rule_id", id).eq("workspace_id", workspace.id).eq("status", "pending").gte("occurred_on", today);
-    if (entriesError) throw new Error("A assinatura foi encerrada, mas não foi possível remover as previsões futuras.");
+    const { error } = await supabase.rpc("set_recurring_rule_active", { p_is_active: false, p_rule_id: id, p_workspace_id: workspace.id });
+    if (error) throw new Error("Não foi possível encerrar a assinatura e remover as previsões futuras.");
   }
 
   async reactivate(id: string): Promise<void> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
-    const { error } = await supabase.from("recurring_rules").update({ is_active: true }).eq("id", id).eq("workspace_id", workspace.id).eq("rule_type", "subscription");
-    if (error) throw new Error("Não foi possível reativar a assinatura.");
-    const { error: generationError } = await supabase.rpc("generate_recurring_entries", { p_rule_id: id });
-    if (generationError) throw new Error("A assinatura foi reativada, mas não foi possível gerar as previsões.");
+    const { error } = await supabase.rpc("set_recurring_rule_active", { p_is_active: true, p_rule_id: id, p_workspace_id: workspace.id });
+    if (error) throw new Error("Não foi possível reativar a assinatura e gerar as previsões.");
   }
 
   async delete(id: string): Promise<void> {
