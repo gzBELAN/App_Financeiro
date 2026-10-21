@@ -6,16 +6,16 @@ import "@/styles/globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "App Financeiro",
-    template: "%s | App Financeiro",
+    default: "Ho.ME",
+    template: "%s | Ho.ME",
   },
-  description: "Controle financeiro pessoal simples, seguro e responsivo.",
-  applicationName: "App Financeiro",
+  description: "House Management Environment para uma rotina financeira doméstica mais inteligente.",
+  applicationName: "Ho.ME",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
-    title: "App Financeiro",
+    statusBarStyle: "black-translucent",
+    title: "Ho.ME",
   },
   icons: {
     apple: "/icons/icon-192.svg",
@@ -38,7 +38,7 @@ export default function RootLayout({ children }: RootLayoutProperties) {
           dangerouslySetInnerHTML={{
             __html: `(() => {
               try {
-                const preference = localStorage.getItem("app-financeiro-theme") || "system";
+                const preference = localStorage.getItem("home-theme") || localStorage.getItem("app-financeiro-theme") || "system";
                 const isDark = preference === "dark" || (preference === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
                 document.documentElement.classList.toggle("dark", isDark);
               } catch { /* A aparência padrão será usada quando o armazenamento não estiver disponível. */ }

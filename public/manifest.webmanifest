@@ -1,13 +1,13 @@
 {
-  "name": "App Financeiro",
-  "short_name": "Finanças",
-  "description": "Controle financeiro pessoal simples, seguro e responsivo.",
+  "name": "Ho.ME — House Management Environment",
+  "short_name": "Ho.ME",
+  "description": "House Management Environment para uma rotina financeira doméstica mais inteligente.",
   "lang": "pt-BR",
   "start_url": "/dashboard",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#FFFFFF",
-  "theme_color": "#2563EB",
+  "background_color": "#091321",
+  "theme_color": "#0E8B8B",
   "icons": [
     {
       "src": "/icons/icon-192.svg",

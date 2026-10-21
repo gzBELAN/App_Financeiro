@@ -1,5 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="42" fill="#2563EB"/>
-  <path d="M48 122V88h20v34H48Zm38 0V66h20v56H86Zm38 0V42h20v80h-20Z" fill="#FFF"/>
-  <path d="m48 76 38-23 38 13 20-17" fill="none" stroke="#93C5FD" stroke-linecap="round" stroke-linejoin="round" stroke-width="10"/>
+  <defs><linearGradient id="a" x1="24" y1="18" x2="171" y2="176" gradientUnits="userSpaceOnUse"><stop stop-color="#16D7CA"/><stop offset="1" stop-color="#087273"/></linearGradient><filter id="b" x="24" y="25" width="144" height="142" filterUnits="userSpaceOnUse"><feGaussianBlur stdDeviation="5"/></filter></defs>
+  <rect width="192" height="192" rx="42" fill="#091321"/>
+  <path d="M25 93 96 30l71 63v45a12 12 0 0 1-12 12H37a12 12 0 0 1-12-12V93Z" fill="url(#a)" opacity=".3" filter="url(#b)"/>
+  <path d="m32 92 64-57 64 57v42a9 9 0 0 1-9 9H41a9 9 0 0 1-9-9V92Z" fill="#0D2632" stroke="#3DF3E4" stroke-width="5.5" stroke-linejoin="round"/>
+  <path d="M59 68v53h74V68" fill="none" stroke="#3DF3E4" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M82 93h28v50H82z" fill="#16D7CA"/><path d="M96 104v28" stroke="#091321" stroke-width="4.5" stroke-linecap="round"/>
+  <circle cx="96" cy="23" r="8" fill="#16D7CA"/><circle cx="96" cy="23" r="16" fill="none" stroke="#16D7CA" stroke-opacity=".34" stroke-width="2"/>
+  <text x="96" y="177" fill="#E8FFFF" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="800" letter-spacing="-3" text-anchor="middle">Ho.ME</text>
 </svg>

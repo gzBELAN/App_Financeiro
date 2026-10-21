@@ -22,6 +22,15 @@ import {
 
 import { LogoutButton } from "@/features/auth/presentation/logout-button";
 
+function BrandMark({ compact = false }: { compact?: boolean }) {
+  return (
+    <span className="flex items-center gap-2.5">
+      <span aria-hidden="true" className="grid size-9 place-items-center rounded-xl bg-primary text-sm font-black tracking-tighter text-primary-foreground shadow-lg shadow-primary/20">H.</span>
+      {compact ? null : <span className="leading-none"><strong className="block text-base font-black tracking-[-0.08em] text-foreground">Ho.ME</strong><span className="mt-1 block text-[0.55rem] font-bold uppercase tracking-[0.18em] text-muted-foreground">House management</span></span>}
+    </span>
+  );
+}
+
 type NavigationItem = {
   href: string;
   label: string;
@@ -82,7 +91,7 @@ export function AppNavigation({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-muted/30">
-      <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background px-4 lg:hidden">
+      <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border/80 bg-background/90 px-4 backdrop-blur-xl lg:hidden">
         <button
           aria-label="Abrir menu"
           className="rounded-md border p-2 hover:bg-muted"
@@ -91,9 +100,7 @@ export function AppNavigation({ children }: { children: ReactNode }) {
         >
           <Menu className="size-5" />
         </button>
-        <Link className="font-semibold tracking-tight text-primary" href="/dashboard">
-          App Financeiro
-        </Link>
+        <Link href="/dashboard"><BrandMark /></Link>
       </header>
       {mobileOpen ? (
         <button
@@ -104,14 +111,13 @@ export function AppNavigation({ children }: { children: ReactNode }) {
         />
       ) : null}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r bg-background p-3 transition-transform duration-200 lg:z-30 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border/80 bg-background/90 p-3 backdrop-blur-xl transition-transform duration-200 lg:z-30 lg:translate-x-0 ${
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         } ${collapsed ? "lg:w-20" : "lg:w-72"}`}
       >
         <div className={`mb-5 flex h-10 items-center ${collapsed ? "justify-center" : "justify-between"}`}>
-          <Link className={`font-semibold tracking-tight text-primary ${collapsed ? "hidden" : ""}`} href="/dashboard">
-            App Financeiro
-          </Link>
+          <Link className={collapsed ? "hidden" : ""} href="/dashboard"><BrandMark /></Link>
+          {collapsed ? <Link href="/dashboard"><BrandMark compact /></Link> : null}
           <button
             aria-label="Fechar menu"
             className="rounded-md border p-2 hover:bg-muted lg:hidden"

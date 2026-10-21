@@ -35,7 +35,7 @@ export function SettingsManager({
   const [isPending, startTransition] = useTransition();
 
   useEffect(() => {
-    const storedTheme = localStorage.getItem("app-financeiro-theme") as ThemePreference | null;
+    const storedTheme = (localStorage.getItem("home-theme") ?? localStorage.getItem("app-financeiro-theme")) as ThemePreference | null;
     const preference = storedTheme ?? themePreference;
     setTheme(preference);
     applyTheme(preference);
@@ -59,7 +59,8 @@ export function SettingsManager({
   function setVisualTheme(preference: ThemePreference) {
     setTheme(preference);
     applyTheme(preference);
-    localStorage.setItem("app-financeiro-theme", preference);
+    localStorage.setItem("home-theme", preference);
+    localStorage.removeItem("app-financeiro-theme");
     startTransition(async () => {
       const result = await updateThemePreference(preference);
       setFeedback(result.error ?? result.success ?? null);
