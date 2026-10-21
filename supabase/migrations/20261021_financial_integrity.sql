@@ -11,7 +11,6 @@ with (security_invoker = true)
 as
 select
   e.id as entry_id,
-  e.workspace_id,
   e.user_id,
   e.credit_card_id,
   c.name as credit_card_name,
@@ -21,7 +20,8 @@ select
   e.status,
   e.installment_number,
   e.installment_count,
-  public.invoice_due_date(e.occurred_on, c.closing_day, c.due_day) as due_date
+  public.invoice_due_date(e.occurred_on, c.closing_day, c.due_day) as due_date,
+  e.workspace_id
 from public.financial_entries e
 join public.credit_cards c on c.id = e.credit_card_id and c.workspace_id = e.workspace_id
 where e.kind = 'expense'
