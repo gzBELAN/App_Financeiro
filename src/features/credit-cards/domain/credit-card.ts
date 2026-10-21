@@ -15,7 +15,7 @@ export type CreditCard = {
   isActive: boolean;
 };
 
-export type CreditCardInput = Omit<CreditCard, "id" | "isActive">;
+export type CreditCardInput = Omit<CreditCard, "id" | "isActive" | "bankName">;
 export type UpdateCreditCardInput = CreditCardInput & { id: string };
 
 export type CreditCardInvoice = {
