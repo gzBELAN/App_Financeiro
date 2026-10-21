@@ -1,5 +1,6 @@
 import type { CreateFixedExpenseInput, FixedExpense, FixedExpenseRepository } from "@/features/fixed-expenses/domain/fixed-expense";
 import { createClient } from "@/lib/supabase/server";
+import { getLocalIsoDate } from "@/lib/utils/date";
 import { getActiveWorkspace } from "@/lib/workspaces/active-workspace";
 
 type RuleRow = {
@@ -26,7 +27,7 @@ export class SupabaseFixedExpenseRepository implements FixedExpenseRepository {
   async update(id: string, input: CreateFixedExpenseInput): Promise<void> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLocalIsoDate();
     const { error } = await supabase.from("recurring_rules").update({ amount_cents: input.amountCents, billing_day: input.billingDay, category_id: input.categoryId || null, description: input.description, frequency: input.frequency, generate_until: input.generateUntil, notes: input.notes || null, payment_method: input.paymentMethod, starts_on: input.startsOn }).eq("id", id).eq("workspace_id", workspace.id).eq("rule_type", "fixed_expense");
     if (error) throw new Error("Não foi possível atualizar a conta fixa.");
     const { error: entriesError } = await supabase.from("financial_entries").delete().eq("recurring_rule_id", id).eq("workspace_id", workspace.id).eq("status", "pending").gte("occurred_on", today);
@@ -38,7 +39,7 @@ export class SupabaseFixedExpenseRepository implements FixedExpenseRepository {
   async deactivate(id: string): Promise<void> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLocalIsoDate();
     const { error } = await supabase.from("recurring_rules").update({ is_active: false }).eq("id", id).eq("workspace_id", workspace.id).eq("rule_type", "fixed_expense");
     if (error) throw new Error("Não foi possível encerrar a conta fixa.");
     const { error: entriesError } = await supabase.from("financial_entries").delete().eq("recurring_rule_id", id).eq("workspace_id", workspace.id).eq("status", "pending").gte("occurred_on", today);

@@ -1,5 +1,6 @@
 import type { CreateSubscriptionInput, Subscription, SubscriptionRepository } from "@/features/subscriptions/domain/subscription";
 import { createClient } from "@/lib/supabase/server";
+import { getLocalIsoDate } from "@/lib/utils/date";
 import { getActiveWorkspace } from "@/lib/workspaces/active-workspace";
 
 type RuleRow = {
@@ -27,7 +28,7 @@ export class SupabaseSubscriptionRepository implements SubscriptionRepository {
   async update(id: string, input: CreateSubscriptionInput): Promise<void> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLocalIsoDate();
     const { error } = await supabase.from("recurring_rules").update({ amount_cents: input.amountCents, billing_day: input.billingDay, category_id: input.categoryId || null, credit_card_id: input.creditCardId || null, description: input.description, frequency: input.frequency, generate_until: input.generateUntil, notes: input.notes || null, payment_method: input.creditCardId ? "credit_card" : "other", starts_on: input.startsOn }).eq("id", id).eq("workspace_id", workspace.id).eq("rule_type", "subscription");
     if (error) throw new Error("Não foi possível atualizar a assinatura.");
     const { error: entriesError } = await supabase.from("financial_entries").delete().eq("recurring_rule_id", id).eq("workspace_id", workspace.id).eq("status", "pending").gte("occurred_on", today);
@@ -39,7 +40,7 @@ export class SupabaseSubscriptionRepository implements SubscriptionRepository {
   async deactivate(id: string): Promise<void> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
-    const today = new Date().toISOString().slice(0, 10);
+    const today = getLocalIsoDate();
     const { error } = await supabase.from("recurring_rules").update({ is_active: false }).eq("id", id).eq("workspace_id", workspace.id).eq("rule_type", "subscription");
     if (error) throw new Error("Não foi possível encerrar a assinatura.");
     const { error: entriesError } = await supabase.from("financial_entries").delete().eq("recurring_rule_id", id).eq("workspace_id", workspace.id).eq("status", "pending").gte("occurred_on", today);

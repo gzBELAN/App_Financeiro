@@ -3,13 +3,14 @@ import { redirect } from "next/navigation";
 import { DashboardView } from "@/features/dashboard/presentation/dashboard-view";
 import { SupabaseDashboardRepository } from "@/features/dashboard/infrastructure/supabase-dashboard-repository";
 import { SupabaseWorkspaceRepository } from "@/features/workspaces/infrastructure/supabase-workspace-repository";
+import { getLocalIsoMonth } from "@/lib/utils/date";
 
 export const metadata = { title: "Dashboard" };
 
 type DashboardPageProperties = { searchParams: Promise<{ month?: string }> };
 
 function currentMonth() {
-  return new Date().toISOString().slice(0, 7);
+  return getLocalIsoMonth();
 }
 
 export default async function DashboardPage({ searchParams }: DashboardPageProperties) {

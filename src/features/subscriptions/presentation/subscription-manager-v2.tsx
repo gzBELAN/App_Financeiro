@@ -4,6 +4,7 @@ import { FormEvent, useState, useTransition } from "react";
 
 import { createSubscription, deactivateSubscription, deleteSubscription, reactivateSubscription, updateSubscription } from "@/features/subscriptions/application/subscription-actions";
 import type { RecurrenceFrequency, Subscription } from "@/features/subscriptions/domain/subscription";
+import { getLocalIsoDate } from "@/lib/utils/date";
 
 type Option = { id: string; name: string };
 type EditingSubscription = Subscription;
@@ -15,7 +16,7 @@ export function SubscriptionManagerV2({ cards, categories, subscriptions }: { ca
   const [editing, setEditing] = useState<EditingSubscription | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getLocalIsoDate();
   const nextYear = `${new Date().getFullYear() + 1}-12-31`;
   const activeSubscriptions = subscriptions.filter((subscription) => subscription.isActive);
   const completedSubscriptions = subscriptions.filter((subscription) => !subscription.isActive);

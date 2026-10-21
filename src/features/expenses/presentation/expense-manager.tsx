@@ -5,6 +5,7 @@ import { FormEvent, useState, useTransition } from "react";
 import { createExpense, deleteExpense, updateExpense } from "@/features/expenses/application/expense-actions";
 import { createInstallmentPurchase } from "@/features/installments/application/installment-purchase-actions";
 import { PAYMENT_METHODS, type EntryKind, type Expense, type PaymentMethod } from "@/features/expenses/domain/expense";
+import { getLocalIsoDate } from "@/lib/utils/date";
 
 type CategoryOption = { id: string; name: string };
 type ExpenseManagerProperties = { expenses: Expense[]; categories: CategoryOption[]; cards: { id: string; name: string }[]; accounts: { id: string; name: string; bankName: string }[] };
@@ -67,7 +68,7 @@ export function ExpenseManager({ accounts, cards, categories, expenses }: Expens
     });
   }
 
-  const currentDate = new Date().toISOString().slice(0, 10);
+  const currentDate = getLocalIsoDate();
 
   return <div className="grid gap-6 xl:grid-cols-[minmax(340px,0.8fr)_minmax(0,1.2fr)]">
     <section className="h-fit rounded-lg border bg-card p-5 shadow-sm">

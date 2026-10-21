@@ -1,4 +1,4 @@
-# Etapa 6 — Dashboard
+# Etapa 7 — Dashboard e personalização
 
 > **Status:** concluída em código. Nenhum comando, teste, instalação ou serviço externo foi executado.
 
@@ -16,7 +16,7 @@ Todos os cálculos também são filtrados pelo controle financeiro ativo, evitan
 - `src/features/dashboard/infrastructure/supabase-dashboard-repository.ts`
 - `src/features/dashboard/presentation/dashboard-view.tsx`
 - **Alterado:** `src/app/(dashboard)/dashboard/page.tsx`
-- `docs/ETAPA_06_DASHBOARD.md`
+- `docs/ETAPA_07_DASHBOARD.md`
 
 ## Indicadores entregues
 
@@ -29,6 +29,13 @@ Todos os cálculos também são filtrados pelo controle financeiro ativo, evitan
 | Despesas do mês | Despesas pagas e pendentes dentro do período. |
 | Despesas futuras | Despesas após o último dia do período. |
 | A pagar no mês | Despesas pendentes dentro do período. |
+
+## Melhorias de UX implementadas
+
+- Indicadores do topo personalizáveis pelo usuário, persistidos somente no navegador.
+- Ações rápidas para registrar lançamento e consultar contas/cartões.
+- Separação explícita entre **saldo calculado** (lançamentos pagos) e saldo conciliado informado em contas bancárias.
+- Cartões visuais, estados vazios e textos de apoio revisados para facilitar a leitura financeira.
 
 ## Gráficos e visualizações
 

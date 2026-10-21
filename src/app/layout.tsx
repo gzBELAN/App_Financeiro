@@ -33,6 +33,19 @@ type RootLayoutProperties = Readonly<{
 export default function RootLayout({ children }: RootLayoutProperties) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(() => {
+              try {
+                const preference = localStorage.getItem("app-financeiro-theme") || "system";
+                const isDark = preference === "dark" || (preference === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+                document.documentElement.classList.toggle("dark", isDark);
+              } catch { /* A aparência padrão será usada quando o armazenamento não estiver disponível. */ }
+            })();`,
+          }}
+        />
+      </head>
       <body>
         {children}
         <ServiceWorkerRegistration />

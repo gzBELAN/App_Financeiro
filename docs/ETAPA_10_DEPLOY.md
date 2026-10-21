@@ -1,4 +1,4 @@
-# Etapa 9 — Deploy Manual
+# Etapa 10 — Deploy Manual
 
 > **Status:** guia concluído. Nenhum comando foi executado, nenhum repositório foi criado e nenhum serviço externo foi acessado.
 
@@ -69,8 +69,9 @@ Corrija qualquer falha antes de continuar. Esses comandos não foram executados 
 6. Em seguida, aplique `supabase/migrations/shared_financial_workspaces.sql` para habilitar controles compartilhados.
 7. Por fim, aplique `supabase/migrations/workspace_settings_management.sql` para habilitar múltiplos controles, administração de participantes e exclusão segura.
 8. Aplique `supabase/migrations/bank_accounts_and_salary.sql` para habilitar bancos, contas, cartões vinculados e salário mensal planejado.
-9. Consulte `docs/ETAPA_06_CONTROLE_COMPARTILHADO.md` para validar os papéis e o fluxo de participantes.
-10. Abra **Table Editor** e confirme as tabelas:
+9. Aplique `supabase/migrations/20261021_financial_integrity.sql` para ativar validações de integridade entre controles financeiros e a proteção da exclusão do último controle acessível.
+10. Consulte `docs/ETAPA_06_CONTROLE_COMPARTILHADO.md` para validar os papéis e o fluxo de participantes.
+11. Abra **Table Editor** e confirme as tabelas:
    - `profiles`
    - `categories`
    - `credit_cards`
@@ -79,7 +80,7 @@ Corrija qualquer falha antes de continuar. Esses comandos não foram executados 
    - `financial_entries`
    - `financial_goals`
    - `bank_accounts`
-11. Confirme também a view `credit_card_invoice_items`, as funções de parcelamento/recorrência e as funções de gerenciamento de controles.
+12. Confirme também a view `credit_card_invoice_items`, as funções de parcelamento/recorrência e as funções de gerenciamento de controles.
 
 > Para banco que já recebeu scripts parciais durante o desenvolvimento, não cole o arquivo todo novamente: execute somente os blocos de função ainda não aplicados, conforme os documentos dos módulos. Para a produção final, a abordagem recomendada é criar um projeto novo e aplicar o script completo uma única vez.
 

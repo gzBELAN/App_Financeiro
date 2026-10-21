@@ -4,6 +4,7 @@ import { FormEvent, useState, useTransition } from "react";
 
 import { createFixedExpense, deactivateFixedExpense, deleteFixedExpense, reactivateFixedExpense, recordFixedExpenseActualAmount, updateFixedExpense } from "@/features/fixed-expenses/application/fixed-expense-actions";
 import type { FixedExpense } from "@/features/fixed-expenses/domain/fixed-expense";
+import { getLocalIsoDate } from "@/lib/utils/date";
 
 type Option = { id: string; name: string };
 type EditingFixedExpense = FixedExpense;
@@ -17,7 +18,7 @@ export function FixedExpenseManagerV2({ categories, expenses }: { categories: Op
   const [editing, setEditing] = useState<EditingFixedExpense | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = getLocalIsoDate();
   const nextYear = `${new Date().getFullYear() + 1}-12-31`;
   const activeExpenses = expenses.filter((expense) => expense.isActive);
   const completedExpenses = expenses.filter((expense) => !expense.isActive);

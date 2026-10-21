@@ -214,6 +214,7 @@ As credenciais são encontradas em **Supabase > Project Settings > API**.
 5. Em seguida, execute `supabase/migrations/shared_financial_workspaces.sql` uma única vez.
 6. Por fim, execute `supabase/migrations/workspace_settings_management.sql` uma única vez.
 7. Execute `supabase/migrations/bank_accounts_and_salary.sql` uma única vez.
+8. Execute `supabase/migrations/20261021_financial_integrity.sql` uma única vez.
 8. Confira tabelas, funções, view e políticas RLS no painel do Supabase.
 
 ### 4. Configurar autenticação
@@ -252,7 +253,7 @@ O guia detalhado está em [`docs/ETAPA_09_DEPLOY.md`](docs/ETAPA_09_DEPLOY.md).
 ### Resumo do processo
 
 1. Crie e configure manualmente um projeto no Supabase.
-2. Aplique `descricao_consulta.sql`, `shared_financial_workspaces.sql` e `workspace_settings_management.sql`, nesta ordem.
+2. Aplique `descricao_consulta.sql`, `shared_financial_workspaces.sql`, `workspace_settings_management.sql`, `bank_accounts_and_salary.sql` e `20261021_financial_integrity.sql`, nesta ordem.
 3. Configure Supabase Auth e as URLs de callback.
 4. Crie um repositório no GitHub e envie o código.
 5. Importe o repositório na Vercel como projeto Next.js.

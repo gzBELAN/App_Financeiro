@@ -58,4 +58,4 @@ Antes de publicar, gere também ícones PNG de 192x192 e 512x512 a partir dos SV
 
 ## Próxima etapa
 
-**Etapa 9 — Deploy:** guia manual detalhado para GitHub, Supabase e Vercel. Nenhum deploy será executado automaticamente.
+**Etapa 10 — Deploy:** guia manual detalhado para GitHub, Supabase e Vercel. Nenhum deploy será executado automaticamente.

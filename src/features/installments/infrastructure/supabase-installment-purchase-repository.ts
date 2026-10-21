@@ -1,5 +1,6 @@
 import type { AdvanceInstallmentsInput, CreateInstallmentPurchaseInput, InstallmentPurchase, InstallmentPurchaseRepository, UpdateInstallmentPurchaseInput } from "@/features/installments/domain/installment-purchase";
 import { createClient } from "@/lib/supabase/server";
+import { getLocalIsoDate } from "@/lib/utils/date";
 import { getActiveWorkspace } from "@/lib/workspaces/active-workspace";
 
 type PurchaseRow = {
@@ -66,7 +67,7 @@ export class SupabaseInstallmentPurchaseRepository implements InstallmentPurchas
     for (const [index, entry] of orderedEntries.entries()) {
       const proportionalDiscount = index === orderedEntries.length - 1 ? remainingDiscount : Math.floor((entry.amount_cents * input.discountCents) / totalCents);
       remainingDiscount -= proportionalDiscount;
-      const { error } = await supabase.from("financial_entries").update({ amount_cents: entry.amount_cents - proportionalDiscount, occurred_on: new Date().toISOString().slice(0, 10), status: "paid" }).eq("id", entry.id).eq("workspace_id", workspace.id).eq("status", "pending");
+      const { error } = await supabase.from("financial_entries").update({ amount_cents: entry.amount_cents - proportionalDiscount, occurred_on: getLocalIsoDate(), status: "paid" }).eq("id", entry.id).eq("workspace_id", workspace.id).eq("status", "pending");
       if (error) throw new Error("Não foi possível concluir o adiantamento das parcelas.");
     }
   }
