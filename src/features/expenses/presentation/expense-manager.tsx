@@ -70,8 +70,8 @@ export function ExpenseManager({ accounts, cards, categories, expenses }: Expens
 
   const currentDate = getLocalIsoDate();
 
-  return <div className="grid gap-6 xl:grid-cols-[minmax(340px,0.8fr)_minmax(0,1.2fr)]">
-    <section className="h-fit rounded-lg border bg-card p-5 shadow-sm">
+  return <div className="grid gap-6 xl:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
+    <section className="h-fit min-w-0 rounded-lg border bg-card p-5 shadow-sm">
       <h2 className="text-lg font-semibold">{editingExpense ? `Editar ${ENTRY_KIND_LABEL[editingExpense.kind].toLowerCase()}` : isInstallment ? "Nova compra parcelada" : "Novo lançamento"}</h2>
       <form className="mt-5 space-y-4" key={editingExpense?.id ?? "new"} onSubmit={editingExpense ? submitEdit : submitCreate}>
         {editingExpense ? <input name="id" type="hidden" value={editingExpense.id} /> : null}

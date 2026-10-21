@@ -32,6 +32,13 @@
     @apply border-border;
   }
 
+  /* Controles não podem extrapolar a coluna quando formulários e listas ficam lado a lado. */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    @apply min-w-0 max-w-full w-full;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
     background-image:

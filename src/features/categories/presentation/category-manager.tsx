@@ -52,7 +52,7 @@ export function CategoryManager({ categories }: CategoryManagerProperties) {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]">
-      <section className="h-fit rounded-lg border bg-card p-5 shadow-sm">
+      <section className="h-fit min-w-0 rounded-lg border bg-card p-5 shadow-sm">
         <h2 className="text-lg font-semibold">{editingCategory ? "Editar categoria" : "Nova categoria"}</h2>
         <p className="mt-1 text-sm text-muted-foreground">Use uma cor para facilitar a leitura dos gráficos.</p>
         <form className="mt-5 space-y-4" key={editingCategory?.id ?? "new"} onSubmit={editingCategory ? submitEdit : submitCreate}>
