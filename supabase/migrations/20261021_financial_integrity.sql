@@ -4,6 +4,30 @@
 
 begin;
 
+-- A view original foi criada antes do suporte a controles compartilhados.
+-- Inclui o contexto para permitir filtros explícitos sem quebrar RLS.
+create or replace view public.credit_card_invoice_items
+with (security_invoker = true)
+as
+select
+  e.id as entry_id,
+  e.workspace_id,
+  e.user_id,
+  e.credit_card_id,
+  c.name as credit_card_name,
+  e.description,
+  e.amount_cents,
+  e.occurred_on,
+  e.status,
+  e.installment_number,
+  e.installment_count,
+  public.invoice_due_date(e.occurred_on, c.closing_day, c.due_day) as due_date
+from public.financial_entries e
+join public.credit_cards c on c.id = e.credit_card_id and c.workspace_id = e.workspace_id
+where e.kind = 'expense'
+  and e.payment_method = 'credit_card'
+  and e.status <> 'cancelled';
+
 -- Garante que cada relacionamento de lançamento pertença ao mesmo controle financeiro.
 create or replace function public.validate_financial_entry_workspace()
 returns trigger

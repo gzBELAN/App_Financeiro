@@ -1,4 +1,4 @@
-import type { DashboardData, DashboardFilters, DashboardRepository, MonthlyEvolutionDatum } from "@/features/dashboard/domain/dashboard";
+import type { DashboardAlert, DashboardData, DashboardFilters, DashboardRepository, MonthlyEvolutionDatum } from "@/features/dashboard/domain/dashboard";
 import { createClient } from "@/lib/supabase/server";
 import { getActiveWorkspace } from "@/lib/workspaces/active-workspace";
 
@@ -42,6 +42,11 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     const futureEntries = entries.filter((entry) => entry.kind === "expense" && entry.occurred_on > lastDay);
     const futureExpenseCents = futureEntries.reduce((sum, entry) => sum + entry.amount_cents, 0);
     const pendingExpenseCents = monthExpenses.filter((entry) => entry.status === "pending").reduce((sum, entry) => sum + entry.amount_cents, 0);
+    const projectedPeriodEndCents = balanceCents - pendingExpenseCents;
+    const alerts: DashboardAlert[] = [];
+    if (projectedPeriodEndCents < 0) alerts.push({ description: `Após pagar os lançamentos pendentes, a projeção é ${Math.abs(projectedPeriodEndCents)} centavos negativa.`, id: "negative-projection", severity: "critical", title: "Projeção de caixa negativa" });
+    if (monthlySalaryCents > 0 && monthlyExpenseCents > monthlySalaryCents) alerts.push({ description: "Os gastos previstos ultrapassam o salário planejado para este mês.", id: "salary-budget", severity: "warning", title: "Orçamento mensal excedido" });
+    if (pendingExpenseCents > 0) alerts.push({ description: `${pendingExpenseCents} centavos ainda aguardam pagamento no período selecionado.`, id: "pending-payments", severity: "warning", title: "Pagamentos pendentes" });
 
     const categoryMap = new Map<string, { value: number; color: string }>();
     const cardMap = new Map<string, { value: number; color: string }>();
@@ -67,6 +72,7 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     });
 
     return {
+      alerts,
       balanceCents,
       cardBreakdown: [...cardMap.entries()].map(([name, item]) => ({ name, ...item })).sort((a, b) => b.value - a.value),
       categoryBreakdown: [...categoryMap.entries()].map(([name, item]) => ({ name, ...item })).sort((a, b) => b.value - a.value),
@@ -76,6 +82,7 @@ export class SupabaseDashboardRepository implements DashboardRepository {
       monthlyExpenseCents,
       monthlySalaryCents,
       pendingExpenseCents,
+      projectedPeriodEndCents,
       salaryRemainingCents: monthlySalaryCents - monthlyExpenseCents,
       recentEntries: monthExpenses.slice(0, 5).map((entry) => ({ amountCents: entry.amount_cents, categoryColor: entry.categories?.color ?? null, categoryName: entry.categories?.name ?? null, description: entry.description, id: entry.id, occurredOn: entry.occurred_on, status: entry.status })),
     };

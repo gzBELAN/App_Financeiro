@@ -118,6 +118,18 @@ export function DashboardView({ data }: { data: DashboardData }) {
 
       <DashboardCustomization cards={cards} onChange={toggleCard} visibleCards={visibleCards} />
 
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <article className="rounded-xl border bg-card p-5 shadow-sm">
+          <p className="text-sm font-medium text-muted-foreground">Projeção ao fim do período</p>
+          <p className={`mt-2 text-2xl font-bold ${data.projectedPeriodEndCents < 0 ? "text-red-600" : "text-emerald-600"}`}>{formatCurrency(data.projectedPeriodEndCents)}</p>
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">Saldo calculado menos os pagamentos ainda pendentes no mês.</p>
+        </article>
+        <article className="rounded-xl border bg-card p-5 shadow-sm">
+          <h2 className="font-semibold">Atenção no período</h2>
+          {data.alerts.length ? <ul className="mt-3 space-y-2">{data.alerts.map((alert) => <li className={`rounded-md border px-3 py-2 text-sm ${alert.severity === "critical" ? "border-red-200 bg-red-50 text-red-950 dark:border-red-950 dark:bg-red-950/40 dark:text-red-100" : "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-950 dark:bg-amber-950/40 dark:text-amber-100"}`} key={alert.id}><strong>{alert.title}</strong><p className="mt-0.5 text-xs opacity-80">{alert.description}</p></li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">Nenhum alerta financeiro para este período.</p>}
+        </article>
+      </section>
+
       {selectedCards.length ? (
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {selectedCards.map((card) => <KpiCard {...card} key={card.id} />)}

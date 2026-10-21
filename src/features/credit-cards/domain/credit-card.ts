@@ -18,8 +18,21 @@ export type CreditCard = {
 export type CreditCardInput = Omit<CreditCard, "id" | "isActive">;
 export type UpdateCreditCardInput = CreditCardInput & { id: string };
 
+export type CreditCardInvoice = {
+  cardId: string;
+  cardName: string;
+  color: string;
+  creditLimitCents: number;
+  dueDate: string;
+  itemCount: number;
+  paidCents: number;
+  pendingCents: number;
+  totalCents: number;
+};
+
 export interface CreditCardRepository {
   list(): Promise<CreditCard[]>;
+  listInvoices(referenceDate: string): Promise<CreditCardInvoice[]>;
   create(input: CreditCardInput): Promise<void>;
   update(input: UpdateCreditCardInput): Promise<void>;
   archive(id: string): Promise<void>;

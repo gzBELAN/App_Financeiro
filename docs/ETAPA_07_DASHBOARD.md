@@ -36,6 +36,8 @@ Todos os cálculos também são filtrados pelo controle financeiro ativo, evitan
 - Ações rápidas para registrar lançamento e consultar contas/cartões.
 - Separação explícita entre **saldo calculado** (lançamentos pagos) e saldo conciliado informado em contas bancárias.
 - Cartões visuais, estados vazios e textos de apoio revisados para facilitar a leitura financeira.
+- Projeção de caixa até o final do período, descontando pagamentos pendentes.
+- Alertas para projeção negativa, orçamento mensal excedido e pagamentos pendentes.
 
 ## Gráficos e visualizações
 

@@ -24,6 +24,7 @@ Páginas autenticadas, dados financeiros e respostas do Supabase **não são arm
 - Manifest com nome, descrição, cores, início em `/dashboard` e modo standalone.
 - Ícones PWA escaláveis em SVG.
 - Registro automático do service worker no navegador.
+- Atualização explícita: o usuário decide quando ativar uma versão nova, sem interromper a sessão atual.
 - Cache dos recursos estáticos e de tela offline.
 - Fallback de navegação sem internet para `/offline`.
 - Metadados para instalação e suporte Apple Web App.

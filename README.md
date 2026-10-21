@@ -69,6 +69,8 @@ O aplicativo usa um menu lateral responsivo: em telas grandes ele pode ser recol
 - Gastos por categoria e cartão.
 - Evolução mensal de receitas e despesas.
 - Acompanhamento de objetivos ativos.
+- Projeção de caixa ao fim do período e alertas para pagamentos pendentes, orçamento excedido e projeção negativa.
+- Faturas futuras por cartão, com limite utilizado, total previsto e vencimento.
 - Relatórios por período, categoria, cartão e origem.
 - Exportação de relatórios em CSV e Excel.
 
@@ -316,6 +318,8 @@ O guia detalhado está em [`docs/ETAPA_09_DEPLOY.md`](docs/ETAPA_09_DEPLOY.md).
 Os documentos de cada etapa estão na pasta [`docs`](docs/), incluindo arquitetura, banco, autenticação, módulos financeiros, dashboard, relatórios, PWA e publicação.
 
 Para a configuração e o uso de controles compartilhados, consulte [`docs/ETAPA_06_CONTROLE_COMPARTILHADO.md`](docs/ETAPA_06_CONTROLE_COMPARTILHADO.md).
+
+Para CI, tipos gerados do Supabase, ambientes e operação segura, consulte [`docs/ETAPA_11_QUALIDADE_E_OPERACAO.md`](docs/ETAPA_11_QUALIDADE_E_OPERACAO.md).
 
 ---
 
