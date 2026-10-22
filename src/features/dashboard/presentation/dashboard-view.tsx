@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { Bar, BarChart, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import type { DashboardData } from "@/features/dashboard/domain/dashboard";
+import type { DashboardData, DashboardExpenseDetail } from "@/features/dashboard/domain/dashboard";
 
 const DASHBOARD_CARDS_STORAGE_KEY = "app-financeiro-dashboard-cards";
 
-type CardIdentifier = "salary" | "monthly-expenses" | "salary-remaining" | "pending";
+type CardIdentifier = "monthly-expenses" | "pending";
 
-const DEFAULT_VISIBLE_CARDS: CardIdentifier[] = ["salary", "monthly-expenses", "salary-remaining", "pending"];
+const DEFAULT_VISIBLE_CARDS: CardIdentifier[] = ["monthly-expenses", "pending"];
 
 type KpiCardProperties = {
   accent?: string;
@@ -27,18 +27,27 @@ const formatCurrency = (cents: number) => new Intl.NumberFormat("pt-BR", { curre
 const formatDate = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(`${value}T00:00:00`));
 const tooltipFormatter = (value: number) => formatCurrency(value);
 
-function KpiCard({ label, value, description, accent = "text-foreground" }: KpiCardProperties) {
+function KpiCard({ label, value, description, accent = "text-foreground", onDetails }: KpiCardProperties & { onDetails?: () => void }) {
   return (
     <article className="rounded-xl border bg-card p-5 shadow-sm transition-shadow hover:shadow-md">
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
       <p className={`mt-2 text-2xl font-bold tracking-tight ${accent}`}>{formatCurrency(value)}</p>
       <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
+      {onDetails ? <button className="mt-3 text-sm font-medium text-primary hover:underline" onClick={onDetails} type="button">Ver detalhes</button> : null}
     </article>
   );
 }
 
+function ExpenseDetailsDialog({ items, onClose, title }: { items: DashboardExpenseDetail[]; onClose: () => void; title: string }) {
+  return <div aria-labelledby="expense-details-title" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={onClose} role="dialog"><section className="max-h-[80vh] w-full max-w-xl overflow-hidden rounded-xl border bg-card shadow-xl" onMouseDown={(event) => event.stopPropagation()}><header className="flex items-start justify-between gap-4 border-b p-5"><div><h2 className="text-lg font-semibold" id="expense-details-title">{title}</h2><p className="mt-1 text-sm text-muted-foreground">{items.length} item(ns) que compõem o total.</p></div><button aria-label="Fechar detalhes" className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" onClick={onClose} type="button">Fechar</button></header>{items.length ? <ul className="max-h-[55vh] divide-y overflow-y-auto">{items.map((item) => <li className="flex items-center justify-between gap-4 p-4" key={`${item.source}-${item.id}`}><div className="min-w-0"><p className="truncate font-medium">{item.description}</p><p className="mt-1 text-sm text-muted-foreground">{formatDate(item.date)} · {item.source} · {item.status === "paid" ? "Pago" : "Pendente"}</p></div><strong className="shrink-0">{formatCurrency(item.amountCents)}</strong></li>)}</ul> : <p className="p-5 text-sm text-muted-foreground">Não há itens neste total.</p>}</section></div>;
+}
+
 function NextSalaryCommitmentCard({ cardInvoiceCents, fixedExpenseCents, totalCents }: { cardInvoiceCents: number; fixedExpenseCents: number; totalCents: number }) {
   return <article className="rounded-xl border bg-card p-5 shadow-sm"><p className="text-sm font-medium text-muted-foreground">Compromissos do próximo salário</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Fatura atualmente em aberto e contas fixas previstas para o próximo mês.</p><dl className="mt-4 space-y-3 text-sm"><div className="flex items-center justify-between gap-4"><dt>Fatura de cartão em aberto</dt><dd className="font-semibold">{formatCurrency(cardInvoiceCents)}</dd></div><div className="flex items-center justify-between gap-4"><dt>Contas fixas do próximo mês</dt><dd className="font-semibold">{formatCurrency(fixedExpenseCents)}</dd></div><div className="flex items-center justify-between gap-4 border-t pt-3 text-base"><dt className="font-semibold">Total já devido</dt><dd className="font-bold text-amber-600">{formatCurrency(totalCents)}</dd></div></dl></article>;
+}
+
+function SalaryPlanningCard({ remainingCents, salaryCents }: { remainingCents: number; salaryCents: number }) {
+  return <article className="rounded-xl border bg-card p-5 shadow-sm"><p className="text-sm font-medium text-muted-foreground">Planejamento do próximo salário</p><dl className="mt-4 space-y-3 text-sm"><div className="flex items-center justify-between gap-4"><dt>Salário planejado</dt><dd className="font-semibold text-primary">{formatCurrency(salaryCents)}</dd></div><div className="flex items-center justify-between gap-4 border-t pt-3 text-base"><dt className="font-semibold">Sobra projetada</dt><dd className={`font-bold ${remainingCents < 0 ? "text-red-600" : "text-emerald-600"}`}>{formatCurrency(remainingCents)}</dd></div></dl><p className="mt-3 text-xs leading-5 text-muted-foreground">Salário planejado menos os compromissos já devidos no próximo mês.</p></article>;
 }
 
 function EmptyChart() {
@@ -71,11 +80,10 @@ function DashboardCustomization({
 }
 
 export function DashboardView({ data }: { data: DashboardData }) {
+  const [details, setDetails] = useState<{ items: DashboardExpenseDetail[]; title: string } | null>(null);
   const cards = useMemo<CardDefinition[]>(
     () => [
-      { accent: "text-primary", description: "Valor líquido planejado para o mês selecionado.", id: "salary", label: "Salário planejado", value: data.monthlySalaryCents },
       { description: "Despesas sem cartão pela data do lançamento e cartões pelo vencimento da fatura.", id: "monthly-expenses", label: "Gastos do mês", value: data.monthlyExpenseCents },
-      { accent: data.salaryRemainingCents < 0 ? "text-red-600" : "text-emerald-600", description: "Salário planejado menos todos os gastos do mês.", id: "salary-remaining", label: "Sobra projetada", value: data.salaryRemainingCents },
       { accent: "text-amber-600", description: "Despesas ainda pendentes dentro do período selecionado.", id: "pending", label: "A pagar no mês", value: data.pendingExpenseCents },
     ],
     [data],
@@ -119,6 +127,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       <DashboardCustomization cards={cards} onChange={toggleCard} visibleCards={visibleCards} />
 
       <section className="grid gap-4 lg:grid-cols-2">
+        <SalaryPlanningCard remainingCents={data.salaryRemainingCents} salaryCents={data.monthlySalaryCents} />
         <NextSalaryCommitmentCard cardInvoiceCents={data.nextSalaryCardInvoiceCents} fixedExpenseCents={data.nextSalaryFixedExpenseCents} totalCents={data.nextSalaryCommitmentCents} />
         <article className="rounded-xl border bg-card p-5 shadow-sm">
           <h2 className="font-semibold">Atenção no período</h2>
@@ -128,7 +137,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
 
       {selectedCards.length ? (
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {selectedCards.map((card) => <KpiCard {...card} key={card.id} />)}
+          {selectedCards.map((card) => <KpiCard {...card} key={card.id} onDetails={card.id === "monthly-expenses" ? () => setDetails({ items: data.monthlyExpenseDetails, title: "Detalhes dos gastos do mês" }) : card.id === "pending" ? () => setDetails({ items: data.pendingExpenseDetails, title: "Detalhes do valor a pagar" }) : undefined} />)}
         </section>
       ) : (
         <section className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
@@ -244,6 +253,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
           </ul>
         ) : <p className="p-5 text-sm text-muted-foreground">Não há despesas no período selecionado.</p>}
       </section>
+      {details ? <ExpenseDetailsDialog items={details.items} onClose={() => setDetails(null)} title={details.title} /> : null}
     </div>
   );
 }
