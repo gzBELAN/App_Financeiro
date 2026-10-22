@@ -7,10 +7,9 @@ export type DashboardData = {
   monthlySalaryCents: number;
   salaryRemainingCents: number;
   monthlyExpenseCents: number;
-  futureExpenseCents: number;
   nextSalaryCommitmentCents: number;
   nextSalaryCardInvoiceCents: number;
-  nextSalaryNonCardExpenseCents: number;
+  nextSalaryFixedExpenseCents: number;
   pendingExpenseCents: number;
   projectedPeriodEndCents: number;
   alerts: DashboardAlert[];

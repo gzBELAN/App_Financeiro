@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 
 import { DashboardView } from "@/features/dashboard/presentation/dashboard-view";
+import { DashboardMonthSelector } from "@/features/dashboard/presentation/dashboard-month-selector";
 import { SupabaseDashboardRepository } from "@/features/dashboard/infrastructure/supabase-dashboard-repository";
 import { SupabaseWorkspaceRepository } from "@/features/workspaces/infrastructure/supabase-workspace-repository";
 import { getLocalIsoMonth } from "@/lib/utils/date";
@@ -28,13 +29,7 @@ export default async function DashboardPage({ searchParams }: DashboardPagePrope
           <h1 className="mt-1 text-3xl font-bold tracking-tight">Dashboard financeiro</h1>
           <p className="mt-2 text-muted-foreground">Acompanhe seus gastos, previsões e objetivos.</p>
         </div>
-        <form className="flex items-end gap-2">
-          <label className="grid gap-1 text-sm font-medium" htmlFor="month">
-            Período
-            <input className="h-10 rounded-md border bg-background px-3" defaultValue={referenceMonth} id="month" name="month" type="month" />
-          </label>
-          <button className="h-10 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground" type="submit">Filtrar</button>
-        </form>
+        <DashboardMonthSelector referenceMonth={referenceMonth} />
       </header>
       <DashboardView data={data} />
     </main>

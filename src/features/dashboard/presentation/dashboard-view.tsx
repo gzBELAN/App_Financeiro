@@ -8,9 +8,9 @@ import type { DashboardData } from "@/features/dashboard/domain/dashboard";
 
 const DASHBOARD_CARDS_STORAGE_KEY = "app-financeiro-dashboard-cards";
 
-type CardIdentifier = "salary" | "monthly-expenses" | "salary-remaining" | "balance" | "future" | "pending" | "next-salary";
+type CardIdentifier = "salary" | "monthly-expenses" | "salary-remaining" | "balance" | "pending" | "next-commitments" | "next-salary";
 
-const DEFAULT_VISIBLE_CARDS: CardIdentifier[] = ["salary", "monthly-expenses", "salary-remaining", "next-salary", "pending"];
+const DEFAULT_VISIBLE_CARDS: CardIdentifier[] = ["salary", "monthly-expenses", "salary-remaining", "next-commitments", "next-salary", "pending"];
 
 type KpiCardProperties = {
   accent?: string;
@@ -73,9 +73,9 @@ export function DashboardView({ data }: { data: DashboardData }) {
       { description: "Despesas sem cartão pela data do lançamento e cartões pelo vencimento da fatura.", id: "monthly-expenses", label: "Gastos do mês", value: data.monthlyExpenseCents },
       { accent: data.salaryRemainingCents < 0 ? "text-red-600" : "text-emerald-600", description: "Salário planejado menos todos os gastos do mês.", id: "salary-remaining", label: "Sobra projetada", value: data.salaryRemainingCents },
       { accent: data.balanceCents < 0 ? "text-red-600" : "text-emerald-600", description: "Receitas pagas menos despesas pagas até o fim do período.", id: "balance", label: "Saldo calculado", value: data.balanceCents },
-      { description: "Total de despesas previstas após o mês selecionado.", id: "future", label: "Despesas futuras", value: data.futureExpenseCents },
       { accent: "text-amber-600", description: "Despesas ainda pendentes dentro do período selecionado.", id: "pending", label: "A pagar no mês", value: data.pendingExpenseCents },
-      { accent: data.nextSalaryCommitmentCents > data.monthlySalaryCents ? "text-red-600" : "text-amber-600", description: `Faturas: ${formatCurrency(data.nextSalaryCardInvoiceCents)} · contas e recorrências: ${formatCurrency(data.nextSalaryNonCardExpenseCents)}.`, id: "next-salary", label: "Comprometido do próximo salário", value: data.nextSalaryCommitmentCents },
+      { accent: "text-amber-600", description: `Fatura: ${formatCurrency(data.nextSalaryCardInvoiceCents)} · contas fixas: ${formatCurrency(data.nextSalaryFixedExpenseCents)}.`, id: "next-commitments", label: "Fatura e contas fixas do próximo mês", value: data.nextSalaryCommitmentCents },
+      { accent: data.nextSalaryCommitmentCents > data.monthlySalaryCents ? "text-red-600" : "text-amber-600", description: "Total já devido no próximo mês; usado para planejar o próximo salário.", id: "next-salary", label: "Total devido no próximo mês", value: data.nextSalaryCommitmentCents },
     ],
     [data],
   );

@@ -2,7 +2,7 @@ import type { DashboardAlert, DashboardData, DashboardFilters, DashboardReposito
 import { createClient } from "@/lib/supabase/server";
 import { getActiveWorkspace } from "@/lib/workspaces/active-workspace";
 
-type EntryRow = { id: string; kind: "expense" | "income"; description: string; amount_cents: number; occurred_on: string; status: "pending" | "paid" | "cancelled"; categories: { name: string; color: string } | null; credit_cards: { name: string; color: string } | null };
+type EntryRow = { id: string; kind: "expense" | "income"; description: string; amount_cents: number; occurred_on: string; status: "pending" | "paid" | "cancelled"; categories: { name: string; color: string } | null; credit_cards: { name: string; color: string } | null; recurring_rules: { rule_type: "fixed_expense" | "subscription" } | null };
 type InvoiceItemRow = { credit_card_id: string; credit_card_name: string; amount_cents: number; due_date: string; status: "pending" | "paid" };
 type GoalRow = { id: string; name: string; current_amount_cents: number; target_amount_cents: number; color: string };
 
@@ -27,7 +27,7 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     const historyStartDate = `${historyStart}-01`;
 
     const [entriesResult, invoiceItemsResult, goalsResult, workspaceResult] = await Promise.all([
-      supabase.from("financial_entries").select("id, kind, description, amount_cents, occurred_on, status, categories(name, color), credit_cards(name, color)").eq("workspace_id", workspace.id).neq("status", "cancelled").order("occurred_on", { ascending: false }),
+      supabase.from("financial_entries").select("id, kind, description, amount_cents, occurred_on, status, categories(name, color), credit_cards(name, color), recurring_rules(rule_type)").eq("workspace_id", workspace.id).neq("status", "cancelled").order("occurred_on", { ascending: false }),
       supabase.from("credit_card_invoice_items").select("credit_card_id, credit_card_name, amount_cents, due_date, status").eq("workspace_id", workspace.id).gte("due_date", firstDay).lte("due_date", nextMonthLastDay),
       supabase.from("financial_goals").select("id, name, current_amount_cents, target_amount_cents, color").eq("workspace_id", workspace.id).eq("is_archived", false).order("created_at", { ascending: false }).limit(4),
       supabase.from("financial_workspaces").select("monthly_salary_cents").eq("id", workspace.id).single(),
@@ -48,13 +48,11 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     const nonCardMonthExpenses = monthExpenses.filter((entry) => !entry.credit_cards);
     const monthlyExpenseCents = nonCardMonthExpenses.reduce((sum, entry) => sum + entry.amount_cents, 0) + currentInvoiceItems.reduce((sum, item) => sum + item.amount_cents, 0);
     const monthlySalaryCents = Number(workspaceResult.data.monthly_salary_cents ?? 0);
-    const futureEntries = entries.filter((entry) => entry.kind === "expense" && entry.occurred_on > lastDay);
-    const futureExpenseCents = futureEntries.reduce((sum, entry) => sum + entry.amount_cents, 0);
     const pendingExpenseCents = nonCardMonthExpenses.filter((entry) => entry.status === "pending").reduce((sum, entry) => sum + entry.amount_cents, 0) + currentInvoiceItems.filter((item) => item.status === "pending").reduce((sum, item) => sum + item.amount_cents, 0);
-    const nextMonthNonCardExpenses = entries.filter((entry) => entry.kind === "expense" && !entry.credit_cards && entry.occurred_on >= nextMonthFirstDay && entry.occurred_on <= nextMonthLastDay && entry.status === "pending");
+    const nextMonthFixedExpenses = entries.filter((entry) => entry.kind === "expense" && !entry.credit_cards && entry.recurring_rules?.rule_type === "fixed_expense" && entry.occurred_on >= nextMonthFirstDay && entry.occurred_on <= nextMonthLastDay && entry.status === "pending");
     const nextSalaryCardInvoiceCents = nextSalaryInvoiceItems.filter((item) => item.status === "pending").reduce((sum, item) => sum + item.amount_cents, 0);
-    const nextSalaryNonCardExpenseCents = nextMonthNonCardExpenses.reduce((sum, entry) => sum + entry.amount_cents, 0);
-    const nextSalaryCommitmentCents = nextSalaryCardInvoiceCents + nextSalaryNonCardExpenseCents;
+    const nextSalaryFixedExpenseCents = nextMonthFixedExpenses.reduce((sum, entry) => sum + entry.amount_cents, 0);
+    const nextSalaryCommitmentCents = nextSalaryCardInvoiceCents + nextSalaryFixedExpenseCents;
     const projectedPeriodEndCents = balanceCents - pendingExpenseCents;
     const alerts: DashboardAlert[] = [];
     if (projectedPeriodEndCents < 0) alerts.push({ description: `Após pagar os lançamentos pendentes, a projeção é ${Math.abs(projectedPeriodEndCents)} centavos negativa.`, id: "negative-projection", severity: "critical", title: "Projeção de caixa negativa" });
@@ -91,14 +89,13 @@ export class SupabaseDashboardRepository implements DashboardRepository {
       balanceCents,
       cardBreakdown: [...cardMap.entries()].map(([name, item]) => ({ name, ...item })).sort((a, b) => b.value - a.value),
       categoryBreakdown: [...categoryMap.entries()].map(([name, item]) => ({ name, ...item })).sort((a, b) => b.value - a.value),
-      futureExpenseCents,
       goals: goals.map((goal) => ({ color: goal.color, currentCents: goal.current_amount_cents, id: goal.id, name: goal.name, targetCents: goal.target_amount_cents })),
       monthlyEvolution: [...evolution.values()],
       monthlyExpenseCents,
       monthlySalaryCents,
       nextSalaryCardInvoiceCents,
       nextSalaryCommitmentCents,
-      nextSalaryNonCardExpenseCents,
+      nextSalaryFixedExpenseCents,
       pendingExpenseCents,
       projectedPeriodEndCents,
       salaryRemainingCents: monthlySalaryCents - monthlyExpenseCents,
