@@ -59,7 +59,8 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     const nextSalaryCommitmentDetails: DashboardExpenseDetail[] = [
       ...nextSalaryInvoiceItems.filter((item) => item.status === "pending").map((item) => ({ amountCents: item.amount_cents, cardName: item.credit_card_name, date: item.due_date, description: item.description, id: item.entry_id, purchaseDate: item.occurred_on, source: "Fatura do cartão" as const, status: item.status })),
       ...nextMonthFixedExpenses.map((entry) => ({ amountCents: entry.amount_cents, date: entry.occurred_on, description: entry.description, id: entry.id, source: "Lançamento" as const, status: "pending" as const })),
-    ].sort((left, right) => (left.purchaseDate ?? left.date).localeCompare(right.purchaseDate ?? right.date));
+    ];
+    nextSalaryCommitmentDetails.sort((left, right) => (left.purchaseDate ?? left.date).localeCompare(right.purchaseDate ?? right.date));
     const alerts: DashboardAlert[] = [];
     if (monthlySalaryCents > 0 && monthlyExpenseCents > monthlySalaryCents) alerts.push({ description: "Os gastos previstos ultrapassam o salário planejado para este mês.", id: "salary-budget", severity: "warning", title: "Orçamento mensal excedido" });
     if (pendingExpenseCents > 0) alerts.push({ description: `${pendingExpenseCents} centavos ainda aguardam pagamento no período selecionado.`, id: "pending-payments", severity: "warning", title: "Pagamentos pendentes" });
