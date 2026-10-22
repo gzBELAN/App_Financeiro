@@ -8,7 +8,7 @@ Parcelamentos são criados por uma função PostgreSQL transacional: `public.cre
 
 O valor em centavos é dividido entre as parcelas sem perder precisão. Quando houver resto, os centavos são distribuídos nas primeiras parcelas. Por exemplo, `R$ 100,00` em `3x` resulta em `R$ 33,34`, `R$ 33,33` e `R$ 33,33`.
 
-As datas futuras preservam o dia da compra sempre que possível. Se um mês tiver menos dias, a parcela é criada no último dia daquele mês. Cada parcela é um `financial_entry` pendente, associado à compra e ao cartão. Como os cartões são vinculados a uma conta bancária, a instituição de origem da compra também fica determinada por esse vínculo.
+As datas futuras preservam o dia da compra sempre que possível. Se um mês tiver menos dias, a parcela é criada no último dia daquele mês. Parcelas com competência anterior ao dia do cadastro são registradas como **pagas**; a competência atual e as futuras permanecem **pendentes** e compõem as faturas abertas. Como os cartões são vinculados a uma conta bancária, a instituição de origem da compra também fica determinada por esse vínculo.
 
 A função SQL de parcelamento recebe o controle financeiro ativo e valida a permissão de editor antes de criar a compra e as parcelas.
 
@@ -29,6 +29,8 @@ A interface de parcelamentos foi integrada à página **Lançamentos** (`/expens
 ## Ação manual obrigatória no Supabase
 
 O script da Etapa 2 foi atualizado com a função `create_installment_purchase`. Se você já executou uma versão anterior do arquivo no Supabase, abra **SQL Editor**, copie novamente o conteúdo completo de `supabase/migrations/descricao_consulta.sql` e execute-o manualmente.
+
+Para bancos que já possuem as migrações de controle compartilhado e integridade aplicadas, execute manualmente o arquivo `supabase/migrations/20261022_installment_historical_status.sql` no **SQL Editor**. Ele substitui somente a função de criação de parcelamentos; não altera compras já registradas.
 
 O script usa comandos seguros de recriação para funções e views, mas tipos e tabelas não usam `if not exists`. Portanto, em uma base já inicializada, execute **somente** o bloco iniciado pelo comentário `-- Cria uma compra parcelada` e terminado antes de `-- View somente de leitura`.
 
