@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveWorkspace } from "@/lib/workspaces/active-workspace";
 
 type EntryRow = { id: string; kind: "expense" | "income"; description: string; amount_cents: number; occurred_on: string; status: "pending" | "paid" | "cancelled"; categories: { name: string; color: string } | null; credit_cards: { name: string; color: string } | null; recurring_rules: { rule_type: "fixed_expense" | "subscription" } | null };
-type InvoiceItemRow = { entry_id: string; credit_card_id: string; credit_card_name: string; description: string; amount_cents: number; occurred_on: string; due_date: string; status: "pending" | "paid" };
+type InvoiceItemRow = { entry_id: string; credit_card_id: string; credit_card_name: string; description: string; amount_cents: number; occurred_on: string; purchase_date: string | null; installment_number: number | null; installment_count: number | null; due_date: string; status: "pending" | "paid" };
 type GoalRow = { id: string; name: string; current_amount_cents: number; target_amount_cents: number; color: string };
 
 function monthBounds(referenceMonth: string) {
@@ -28,7 +28,7 @@ export class SupabaseDashboardRepository implements DashboardRepository {
 
     const [entriesResult, invoiceItemsResult, goalsResult, workspaceResult] = await Promise.all([
       supabase.from("financial_entries").select("id, kind, description, amount_cents, occurred_on, status, categories(name, color), credit_cards(name, color), recurring_rules(rule_type)").eq("workspace_id", workspace.id).neq("status", "cancelled").order("occurred_on", { ascending: false }),
-      supabase.from("credit_card_invoice_items").select("entry_id, credit_card_id, credit_card_name, description, amount_cents, occurred_on, due_date, status").eq("workspace_id", workspace.id).gte("due_date", firstDay).lte("due_date", nextMonthLastDay),
+      supabase.from("credit_card_invoice_items").select("entry_id, credit_card_id, credit_card_name, description, amount_cents, occurred_on, purchase_date, installment_number, installment_count, due_date, status").eq("workspace_id", workspace.id).gte("due_date", firstDay).lte("due_date", nextMonthLastDay),
       supabase.from("financial_goals").select("id, name, current_amount_cents, target_amount_cents, color").eq("workspace_id", workspace.id).eq("is_archived", false).order("created_at", { ascending: false }).limit(4),
       supabase.from("financial_workspaces").select("monthly_salary_cents").eq("id", workspace.id).single(),
     ]);
@@ -57,10 +57,10 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     ].sort((left, right) => left.date.localeCompare(right.date));
     const pendingExpenseDetails = monthlyExpenseDetails.filter((item) => item.status === "pending");
     const nextSalaryCommitmentDetails: DashboardExpenseDetail[] = [
-      ...nextSalaryInvoiceItems.filter((item) => item.status === "pending").map((item) => ({ amountCents: item.amount_cents, cardName: item.credit_card_name, date: item.due_date, description: item.description, id: item.entry_id, purchaseDate: item.occurred_on, source: "Fatura do cartão" as const, status: item.status })),
+      ...nextSalaryInvoiceItems.filter((item) => item.status === "pending").map((item) => ({ amountCents: item.amount_cents, cardName: item.credit_card_name, date: item.due_date, description: item.description, id: item.entry_id, installmentCount: item.installment_count ?? undefined, installmentNumber: item.installment_number ?? undefined, purchaseDate: item.purchase_date ?? item.occurred_on, source: "Fatura do cartão" as const, status: item.status })),
       ...nextMonthFixedExpenses.map((entry) => ({ amountCents: entry.amount_cents, date: entry.occurred_on, description: entry.description, id: entry.id, source: "Lançamento" as const, status: "pending" as const })),
     ];
-    nextSalaryCommitmentDetails.sort((left, right) => (left.purchaseDate ?? left.date).localeCompare(right.purchaseDate ?? right.date));
+    nextSalaryCommitmentDetails.sort((left, right) => (right.purchaseDate ?? right.date).localeCompare(left.purchaseDate ?? left.date));
     const alerts: DashboardAlert[] = [];
     if (monthlySalaryCents > 0 && monthlyExpenseCents > monthlySalaryCents) alerts.push({ description: "Os gastos previstos ultrapassam o salário planejado para este mês.", id: "salary-budget", severity: "warning", title: "Orçamento mensal excedido" });
     if (pendingExpenseCents > 0) alerts.push({ description: `${pendingExpenseCents} centavos ainda aguardam pagamento no período selecionado.`, id: "pending-payments", severity: "warning", title: "Pagamentos pendentes" });
