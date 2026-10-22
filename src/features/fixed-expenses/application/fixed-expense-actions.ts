@@ -32,7 +32,7 @@ export async function updateFixedExpense(_: FixedExpenseActionState, formData: F
 
 export async function deactivateFixedExpense(id: string): Promise<FixedExpenseActionState> {
   if (!id) return { error: "Conta fixa inválida." };
-  try { await new SupabaseFixedExpenseRepository().deactivate(id); refreshFixedExpenses(); return { success: "Conta fixa encerrada e previsões futuras removidas." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+  try { await new SupabaseFixedExpenseRepository().deactivate(id); refreshFixedExpenses(); return { success: "Conta fixa encerrada; somente os valores reais confirmados foram mantidos." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
 }
 
 export async function recordFixedExpenseActualAmount(_: FixedExpenseActionState, formData: FormData): Promise<FixedExpenseActionState> {
@@ -49,5 +49,5 @@ export async function reactivateFixedExpense(id: string): Promise<FixedExpenseAc
 
 export async function deleteFixedExpense(id: string): Promise<FixedExpenseActionState> {
   if (!id) return { error: "Conta fixa inválida." };
-  try { await new SupabaseFixedExpenseRepository().delete(id); refreshFixedExpenses(); return { success: "Conta fixa excluída permanentemente." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
+  try { await new SupabaseFixedExpenseRepository().delete(id); refreshFixedExpenses(); return { success: "Conta fixa e todo o seu histórico foram excluídos completamente." }; } catch (error) { return { error: error instanceof Error ? error.message : "Ocorreu um erro inesperado." }; }
 }

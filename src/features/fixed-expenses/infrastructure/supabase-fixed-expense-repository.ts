@@ -60,11 +60,8 @@ export class SupabaseFixedExpenseRepository implements FixedExpenseRepository {
   async delete(id: string): Promise<void> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
-    const { count, error: countError } = await supabase.from("financial_entries").select("id", { count: "exact", head: true }).eq("recurring_rule_id", id).eq("workspace_id", workspace.id).eq("status", "paid");
-    if (countError) throw new Error("Não foi possível verificar o histórico da conta fixa.");
-    if (count) throw new Error("A conta fixa possui pagamentos no histórico e não pode ser excluída. Mantenha-a encerrada.");
-    const { error } = await supabase.from("recurring_rules").delete().eq("id", id).eq("workspace_id", workspace.id).eq("rule_type", "fixed_expense").eq("is_active", false);
-    if (error) throw new Error("Não foi possível excluir a conta fixa.");
+    const { error } = await supabase.from("recurring_rules").delete().eq("id", id).eq("workspace_id", workspace.id).eq("rule_type", "fixed_expense");
+    if (error) throw new Error("Não foi possível excluir completamente a conta fixa.");
   }
 
   async recordActualAmount(entryId: string, amountCents: number): Promise<void> {
