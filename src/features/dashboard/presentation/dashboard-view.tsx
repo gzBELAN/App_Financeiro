@@ -8,9 +8,9 @@ import type { DashboardData } from "@/features/dashboard/domain/dashboard";
 
 const DASHBOARD_CARDS_STORAGE_KEY = "app-financeiro-dashboard-cards";
 
-type CardIdentifier = "salary" | "monthly-expenses" | "salary-remaining" | "balance" | "pending" | "next-commitments" | "next-salary";
+type CardIdentifier = "salary" | "monthly-expenses" | "salary-remaining" | "pending";
 
-const DEFAULT_VISIBLE_CARDS: CardIdentifier[] = ["salary", "monthly-expenses", "salary-remaining", "next-commitments", "next-salary", "pending"];
+const DEFAULT_VISIBLE_CARDS: CardIdentifier[] = ["salary", "monthly-expenses", "salary-remaining", "pending"];
 
 type KpiCardProperties = {
   accent?: string;
@@ -35,6 +35,10 @@ function KpiCard({ label, value, description, accent = "text-foreground" }: KpiC
       <p className="mt-1 text-xs leading-5 text-muted-foreground">{description}</p>
     </article>
   );
+}
+
+function NextSalaryCommitmentCard({ cardInvoiceCents, fixedExpenseCents, totalCents }: { cardInvoiceCents: number; fixedExpenseCents: number; totalCents: number }) {
+  return <article className="rounded-xl border bg-card p-5 shadow-sm"><p className="text-sm font-medium text-muted-foreground">Compromissos do próximo salário</p><p className="mt-1 text-xs leading-5 text-muted-foreground">Fatura atualmente em aberto e contas fixas previstas para o próximo mês.</p><dl className="mt-4 space-y-3 text-sm"><div className="flex items-center justify-between gap-4"><dt>Fatura de cartão em aberto</dt><dd className="font-semibold">{formatCurrency(cardInvoiceCents)}</dd></div><div className="flex items-center justify-between gap-4"><dt>Contas fixas do próximo mês</dt><dd className="font-semibold">{formatCurrency(fixedExpenseCents)}</dd></div><div className="flex items-center justify-between gap-4 border-t pt-3 text-base"><dt className="font-semibold">Total já devido</dt><dd className="font-bold text-amber-600">{formatCurrency(totalCents)}</dd></div></dl></article>;
 }
 
 function EmptyChart() {
@@ -72,10 +76,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       { accent: "text-primary", description: "Valor líquido planejado para o mês selecionado.", id: "salary", label: "Salário planejado", value: data.monthlySalaryCents },
       { description: "Despesas sem cartão pela data do lançamento e cartões pelo vencimento da fatura.", id: "monthly-expenses", label: "Gastos do mês", value: data.monthlyExpenseCents },
       { accent: data.salaryRemainingCents < 0 ? "text-red-600" : "text-emerald-600", description: "Salário planejado menos todos os gastos do mês.", id: "salary-remaining", label: "Sobra projetada", value: data.salaryRemainingCents },
-      { accent: data.balanceCents < 0 ? "text-red-600" : "text-emerald-600", description: "Receitas pagas menos despesas pagas até o fim do período.", id: "balance", label: "Saldo calculado", value: data.balanceCents },
       { accent: "text-amber-600", description: "Despesas ainda pendentes dentro do período selecionado.", id: "pending", label: "A pagar no mês", value: data.pendingExpenseCents },
-      { accent: "text-amber-600", description: `Fatura: ${formatCurrency(data.nextSalaryCardInvoiceCents)} · contas fixas: ${formatCurrency(data.nextSalaryFixedExpenseCents)}.`, id: "next-commitments", label: "Fatura e contas fixas do próximo mês", value: data.nextSalaryCommitmentCents },
-      { accent: data.nextSalaryCommitmentCents > data.monthlySalaryCents ? "text-red-600" : "text-amber-600", description: "Total já devido no próximo mês; usado para planejar o próximo salário.", id: "next-salary", label: "Total devido no próximo mês", value: data.nextSalaryCommitmentCents },
     ],
     [data],
   );
@@ -107,25 +108,18 @@ export function DashboardView({ data }: { data: DashboardData }) {
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-3 rounded-xl border bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 lg:grid-cols-[1fr_auto] lg:items-center">
-        <div>
-          <h2 className="font-semibold">Organize sua próxima decisão financeira</h2>
-          <p className="mt-1 text-sm text-muted-foreground">Planeje o salário por compromissos futuros: faturas, contas fixas e assinaturas. Este painel não representa saldo de conta corrente em tempo real.</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Link className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground" href="/expenses">Novo lançamento</Link>
-          <Link className="rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-muted" href="/cards">Ver contas e cartões</Link>
+      <section className="flex flex-col gap-3 rounded-lg border bg-primary/5 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-sm text-muted-foreground"><span className="font-medium text-foreground">Planejamento mensal:</span> acompanhe faturas e contas que comprometem o próximo salário.</p>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          <Link className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground" href="/expenses">Lançamentos</Link>
+          <Link className="rounded-md border bg-background px-3 py-1.5 text-sm font-medium hover:bg-muted" href="/cards">Contas e cartões</Link>
         </div>
       </section>
 
       <DashboardCustomization cards={cards} onChange={toggleCard} visibleCards={visibleCards} />
 
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <article className="rounded-xl border bg-card p-5 shadow-sm">
-          <p className="text-sm font-medium text-muted-foreground">Projeção ao fim do período</p>
-          <p className={`mt-2 text-2xl font-bold ${data.projectedPeriodEndCents < 0 ? "text-red-600" : "text-emerald-600"}`}>{formatCurrency(data.projectedPeriodEndCents)}</p>
-          <p className="mt-1 text-xs leading-5 text-muted-foreground">Saldo calculado menos os pagamentos ainda pendentes no mês.</p>
-        </article>
+      <section className="grid gap-4 lg:grid-cols-2">
+        <NextSalaryCommitmentCard cardInvoiceCents={data.nextSalaryCardInvoiceCents} fixedExpenseCents={data.nextSalaryFixedExpenseCents} totalCents={data.nextSalaryCommitmentCents} />
         <article className="rounded-xl border bg-card p-5 shadow-sm">
           <h2 className="font-semibold">Atenção no período</h2>
           {data.alerts.length ? <ul className="mt-3 space-y-2">{data.alerts.map((alert) => <li className={`rounded-md border px-3 py-2 text-sm ${alert.severity === "critical" ? "border-red-200 bg-red-50 text-red-950 dark:border-red-950 dark:bg-red-950/40 dark:text-red-100" : "border-amber-200 bg-amber-50 text-amber-950 dark:border-amber-950 dark:bg-amber-950/40 dark:text-amber-100"}`} key={alert.id}><strong>{alert.title}</strong><p className="mt-0.5 text-xs opacity-80">{alert.description}</p></li>)}</ul> : <p className="mt-2 text-sm text-muted-foreground">Nenhum alerta financeiro para este período.</p>}

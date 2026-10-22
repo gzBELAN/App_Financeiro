@@ -42,8 +42,6 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     const currentInvoiceItems = invoiceItems.filter((item) => item.due_date >= firstDay && item.due_date <= lastDay);
     const nextSalaryInvoiceItems = invoiceItems.filter((item) => item.due_date >= nextMonthFirstDay && item.due_date <= nextMonthLastDay);
     const goals = goalsResult.data as GoalRow[];
-    const paidEntriesUntilPeriod = entries.filter((entry) => entry.status === "paid" && entry.occurred_on <= lastDay);
-    const balanceCents = paidEntriesUntilPeriod.reduce((sum, entry) => sum + (entry.kind === "income" ? entry.amount_cents : -entry.amount_cents), 0);
     const monthExpenses = entries.filter((entry) => entry.kind === "expense" && entry.occurred_on >= firstDay && entry.occurred_on <= lastDay);
     const nonCardMonthExpenses = monthExpenses.filter((entry) => !entry.credit_cards);
     const monthlyExpenseCents = nonCardMonthExpenses.reduce((sum, entry) => sum + entry.amount_cents, 0) + currentInvoiceItems.reduce((sum, item) => sum + item.amount_cents, 0);
@@ -53,9 +51,7 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     const nextSalaryCardInvoiceCents = nextSalaryInvoiceItems.filter((item) => item.status === "pending").reduce((sum, item) => sum + item.amount_cents, 0);
     const nextSalaryFixedExpenseCents = nextMonthFixedExpenses.reduce((sum, entry) => sum + entry.amount_cents, 0);
     const nextSalaryCommitmentCents = nextSalaryCardInvoiceCents + nextSalaryFixedExpenseCents;
-    const projectedPeriodEndCents = balanceCents - pendingExpenseCents;
     const alerts: DashboardAlert[] = [];
-    if (projectedPeriodEndCents < 0) alerts.push({ description: `Após pagar os lançamentos pendentes, a projeção é ${Math.abs(projectedPeriodEndCents)} centavos negativa.`, id: "negative-projection", severity: "critical", title: "Projeção de caixa negativa" });
     if (monthlySalaryCents > 0 && monthlyExpenseCents > monthlySalaryCents) alerts.push({ description: "Os gastos previstos ultrapassam o salário planejado para este mês.", id: "salary-budget", severity: "warning", title: "Orçamento mensal excedido" });
     if (pendingExpenseCents > 0) alerts.push({ description: `${pendingExpenseCents} centavos ainda aguardam pagamento no período selecionado.`, id: "pending-payments", severity: "warning", title: "Pagamentos pendentes" });
     if (monthlySalaryCents > 0 && nextSalaryCommitmentCents > monthlySalaryCents) alerts.push({ description: `O próximo período já possui ${nextSalaryCommitmentCents} centavos comprometidos.`, id: "next-salary-budget", severity: "warning", title: "Próximo salário comprometido" });
@@ -86,7 +82,6 @@ export class SupabaseDashboardRepository implements DashboardRepository {
 
     return {
       alerts,
-      balanceCents,
       cardBreakdown: [...cardMap.entries()].map(([name, item]) => ({ name, ...item })).sort((a, b) => b.value - a.value),
       categoryBreakdown: [...categoryMap.entries()].map(([name, item]) => ({ name, ...item })).sort((a, b) => b.value - a.value),
       goals: goals.map((goal) => ({ color: goal.color, currentCents: goal.current_amount_cents, id: goal.id, name: goal.name, targetCents: goal.target_amount_cents })),
@@ -97,7 +92,6 @@ export class SupabaseDashboardRepository implements DashboardRepository {
       nextSalaryCommitmentCents,
       nextSalaryFixedExpenseCents,
       pendingExpenseCents,
-      projectedPeriodEndCents,
       salaryRemainingCents: monthlySalaryCents - monthlyExpenseCents,
       recentEntries: monthExpenses.slice(0, 5).map((entry) => ({ amountCents: entry.amount_cents, categoryColor: entry.categories?.color ?? null, categoryName: entry.categories?.name ?? null, description: entry.description, id: entry.id, occurredOn: entry.occurred_on, status: entry.status })),
     };

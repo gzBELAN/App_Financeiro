@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     --background: 222 47% 97%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
@@ -17,6 +18,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     --background: 222 47% 7%;
     --foreground: 180 17% 94%;
     --card: 222 39% 11%;
@@ -37,6 +39,12 @@
   select,
   textarea {
     @apply min-w-0 max-w-full w-full;
+  }
+
+  /* Ícones nativos, como o calendário de campos date/month, acompanham o tema. */
+  input[type="date"],
+  input[type="month"] {
+    color-scheme: inherit;
   }
 
   body {
