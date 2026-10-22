@@ -32,6 +32,8 @@ O script da Etapa 2 foi atualizado com a função `create_installment_purchase`.
 
 Para bancos que já possuem as migrações de controle compartilhado e integridade aplicadas, execute manualmente o arquivo `supabase/migrations/20261022_installment_historical_status.sql` no **SQL Editor**. Ele substitui somente a função de criação de parcelamentos; não altera compras já registradas. A função depende de `public.invoice_due_date`, disponibilizada por `20261021_financial_integrity.sql`.
 
+Para permitir a correção completa de uma compra parcelada pela lista de lançamentos, execute também `supabase/migrations/20261022_update_installment_purchase_full.sql`, depois da migração de status histórico. Essa operação recalcula todas as parcelas da compra — inclusive as que estavam marcadas como pagas — usando os novos dados de valor, quantidade, data, cartão, categoria, descrição e observações.
+
 O script usa comandos seguros de recriação para funções e views, mas tipos e tabelas não usam `if not exists`. Portanto, em uma base já inicializada, execute **somente** o bloco iniciado pelo comentário `-- Cria uma compra parcelada` e terminado antes de `-- View somente de leitura`.
 
 ## Funcionalidades entregues
@@ -45,6 +47,7 @@ O script usa comandos seguros de recriação para funções e views, mas tipos e
 - Seleção de parcelas pendentes para adiantamento.
 - Desconto opcional ao adiantar parcelas; quando informado, ele é distribuído proporcionalmente entre as parcelas selecionadas.
 - Parcelas adiantadas são marcadas como pagas na data atual e deixam de compor previsões pendentes.
+- Correção completa de compras parceladas na lista de lançamentos, com regeneração atômica do cronograma de parcelas.
 
 ## Rota protegida
 

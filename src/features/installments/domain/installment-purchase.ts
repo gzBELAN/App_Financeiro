@@ -40,6 +40,10 @@ export type AdvanceInstallmentsInput = {
 export type UpdateInstallmentPurchaseInput = {
   id: string;
   description: string;
+  totalAmountCents: number;
+  installmentCount: number;
+  purchaseDate: string;
+  creditCardId: string;
   categoryId?: string;
   notes?: string;
 };

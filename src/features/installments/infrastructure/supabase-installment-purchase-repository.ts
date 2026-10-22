@@ -71,12 +71,16 @@ export class SupabaseInstallmentPurchaseRepository implements InstallmentPurchas
     const workspace = await getActiveWorkspace();
     const { error } = await supabase.rpc("update_installment_purchase", {
       p_category_id: input.categoryId || null,
+      p_credit_card_id: input.creditCardId,
       p_description: input.description,
+      p_installment_count: input.installmentCount,
       p_notes: input.notes || null,
+      p_purchase_date: input.purchaseDate,
       p_purchase_id: input.id,
+      p_total_amount_cents: input.totalAmountCents,
       p_workspace_id: workspace.id,
     });
-    if (error) throw new Error("Não foi possível atualizar a compra parcelada e sincronizar as parcelas pendentes.");
+    if (error) throw new Error("Não foi possível atualizar a compra parcelada.");
   }
 
   async delete(id: string): Promise<void> {

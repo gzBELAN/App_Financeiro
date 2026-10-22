@@ -2,22 +2,20 @@
 
 import { FormEvent, useState, useTransition } from "react";
 
-import { advanceInstallments, deleteInstallmentPurchase, updateInstallmentPurchase } from "@/features/installments/application/installment-purchase-actions";
+import { advanceInstallments, deleteInstallmentPurchase } from "@/features/installments/application/installment-purchase-actions";
 import type { InstallmentPurchase } from "@/features/installments/domain/installment-purchase";
 
 type Option = { id: string; name: string };
 const currency = (cents: number) => new Intl.NumberFormat("pt-BR", { currency: "BRL", style: "currency" }).format(cents / 100);
 const dateLabel = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium" }).format(new Date(`${value}T00:00:00`));
 
-export function InstallmentManagerV2({ categories, purchases }: { categories: Option[]; purchases: InstallmentPurchase[] }) {
+export function InstallmentManagerV2({ purchases }: { categories: Option[]; purchases: InstallmentPurchase[] }) {
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [editing, setEditing] = useState<InstallmentPurchase | null>(null);
   const [expandedPurchases, setExpandedPurchases] = useState<Set<string>>(new Set());
   const [isPending, startTransition] = useTransition();
   const purchasesWithPendingInstallments = purchases.filter((purchase) => purchase.installments.some((installment) => installment.status === "pending"));
   function toggleDetails(id: string) { setExpandedPurchases((current) => { const next = new Set(current); if (next.has(id)) next.delete(id); else next.add(id); return next; }); }
   function advance(event: FormEvent<HTMLFormElement>) { event.preventDefault(); startTransition(async () => { const result = await advanceInstallments({}, new FormData(event.currentTarget)); setFeedback(result.error ?? result.success ?? null); }); }
-  function update(event: FormEvent<HTMLFormElement>) { event.preventDefault(); startTransition(async () => { const result = await updateInstallmentPurchase({}, new FormData(event.currentTarget)); setFeedback(result.error ?? result.success ?? null); if (result.success) setEditing(null); }); }
   function remove(purchase: InstallmentPurchase) { if (!window.confirm(`Excluir "${purchase.description}" e todo o histórico de parcelas desta compra? Esta ação não pode ser desfeita.`)) return; startTransition(async () => { const result = await deleteInstallmentPurchase(purchase.id); setFeedback(result.error ?? result.success ?? null); }); }
 
   return <div className="space-y-6">
@@ -38,7 +36,6 @@ export function InstallmentManagerV2({ categories, purchases }: { categories: Op
             </div>
             <div className="flex flex-wrap gap-2">
               <button aria-expanded={isExpanded} className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" onClick={() => toggleDetails(purchase.id)} type="button">{isExpanded ? "Recolher parcelas" : "Ver parcelas"}</button>
-              <button className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" disabled={isPending} onClick={() => setEditing(purchase)} type="button">Editar</button>
               <button className="rounded-md px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-950" disabled={isPending} onClick={() => remove(purchase)} type="button">Excluir</button>
             </div>
           </div>
@@ -58,20 +55,6 @@ export function InstallmentManagerV2({ categories, purchases }: { categories: Op
         </article>;
       })}
     </section>
-    {editing ? <section className="rounded-lg border bg-card p-5 shadow-sm">
-      <h2 className="text-lg font-semibold">Editar compra parcelada</h2>
-      <p className="mt-1 text-sm text-muted-foreground">Valor, cartão, data e número de parcelas não podem ser alterados para preservar parcelas já geradas.</p>
-      <form className="mt-4 space-y-4" onSubmit={update}>
-        <input name="id" type="hidden" value={editing.id} />
-        <label className="grid gap-1.5 text-sm font-medium">Descrição<input className="h-10 rounded-md border bg-background px-3" defaultValue={editing.description} maxLength={200} name="description" required /></label>
-        <label className="grid gap-1.5 text-sm font-medium">Categoria<select className="h-10 rounded-md border bg-background px-3" defaultValue={editing.categoryId ?? ""} name="categoryId"><option value="">Sem categoria</option>{categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</select></label>
-        <label className="grid gap-1.5 text-sm font-medium">Observações<textarea className="min-h-20 rounded-md border bg-background px-3 py-2" defaultValue={editing.notes ?? ""} maxLength={2000} name="notes" /></label>
-        <div className="flex flex-wrap gap-3">
-          <button className="h-10 rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground disabled:opacity-60" disabled={isPending} type="submit">{isPending ? "Salvando..." : "Salvar alterações"}</button>
-          <button className="h-10 rounded-md border px-4 text-sm font-medium hover:bg-muted" disabled={isPending} onClick={() => setEditing(null)} type="button">Cancelar</button>
-        </div>
-      </form>
-    </section> : null}
     {feedback ? <p aria-live="polite" className="text-sm text-muted-foreground">{feedback}</p> : null}
   </div>;
 }
