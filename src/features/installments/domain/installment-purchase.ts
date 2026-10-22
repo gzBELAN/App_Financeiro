@@ -29,6 +29,7 @@ export type CreateInstallmentPurchaseInput = {
   creditCardId: string;
   categoryId?: string;
   notes?: string;
+  firstInstallmentInvoiceAdjustment?: -1 | 0 | 1;
 };
 
 export type AdvanceInstallmentsInput = {
@@ -46,6 +47,7 @@ export type UpdateInstallmentPurchaseInput = {
   creditCardId: string;
   categoryId?: string;
   notes?: string;
+  firstInstallmentInvoiceAdjustment?: -1 | 0 | 1;
 };
 
 export interface InstallmentPurchaseRepository {

@@ -34,6 +34,8 @@ Para bancos que já possuem as migrações de controle compartilhado e integrida
 
 Para permitir a correção completa de uma compra parcelada pela lista de lançamentos, execute também `supabase/migrations/20261022_update_installment_purchase_full.sql`, depois da migração de status histórico. Essa operação recalcula todas as parcelas da compra — inclusive as que estavam marcadas como pagas — usando os novos dados de valor, quantidade, data, cartão, categoria, descrição e observações.
 
+Para ciclos de cartão dinâmicos, execute por último `supabase/migrations/20261022_dynamic_card_billing_cycles.sql`. O vencimento passa para o próximo dia útil quando cair em sábado, domingo ou feriado nacional fixo; o fechamento é calculado por dias corridos antes do vencimento cadastrado. A migração também recalcula o status de todas as parcelas e lançamentos de cartão existentes. Feriados estaduais e municipais não são considerados nesta configuração.
+
 O script usa comandos seguros de recriação para funções e views, mas tipos e tabelas não usam `if not exists`. Portanto, em uma base já inicializada, execute **somente** o bloco iniciado pelo comentário `-- Cria uma compra parcelada` e terminado antes de `-- View somente de leitura`.
 
 ## Funcionalidades entregues
@@ -48,6 +50,7 @@ O script usa comandos seguros de recriação para funções e views, mas tipos e
 - Desconto opcional ao adiantar parcelas; quando informado, ele é distribuído proporcionalmente entre as parcelas selecionadas.
 - Parcelas adiantadas são marcadas como pagas na data atual e deixam de compor previsões pendentes.
 - Correção completa de compras parceladas na lista de lançamentos, com regeneração atômica do cronograma de parcelas.
+- Ajuste opcional da primeira parcela para a fatura anterior ou a próxima quando houver variação do fechamento bancário.
 
 ## Rota protegida
 

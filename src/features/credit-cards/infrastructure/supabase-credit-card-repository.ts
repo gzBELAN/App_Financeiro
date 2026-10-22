@@ -10,7 +10,7 @@ type CreditCardRow = {
   brand: string;
   card_type: CreditCard["cardType"];
   credit_limit_cents: number;
-  closing_day: number;
+  closing_days_before_due: number;
   due_day: number;
   color: string;
   is_active: boolean;
@@ -18,7 +18,7 @@ type CreditCardRow = {
 type InvoiceItemRow = { credit_card_id: string; credit_card_name: string; amount_cents: number; due_date: string; status: "paid" | "pending" };
 
 function mapCard(card: CreditCardRow): CreditCard {
-  return { bankAccountId: card.bank_account_id, bankName: card.bank_name, brand: card.brand, cardType: card.card_type, closingDay: card.closing_day, color: card.color, creditLimitCents: card.credit_limit_cents, dueDay: card.due_day, id: card.id, isActive: card.is_active, name: card.name };
+  return { bankAccountId: card.bank_account_id, bankName: card.bank_name, brand: card.brand, cardType: card.card_type, closingDaysBeforeDue: card.closing_days_before_due, color: card.color, creditLimitCents: card.credit_limit_cents, dueDay: card.due_day, id: card.id, isActive: card.is_active, name: card.name };
 }
 
 export class SupabaseCreditCardRepository implements CreditCardRepository {
@@ -32,7 +32,7 @@ export class SupabaseCreditCardRepository implements CreditCardRepository {
   async list(): Promise<CreditCard[]> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
-    const { data, error } = await supabase.from("credit_cards").select("id, name, bank_name, bank_account_id, brand, card_type, credit_limit_cents, closing_day, due_day, color, is_active").eq("workspace_id", workspace.id).order("is_active", { ascending: false }).order("name");
+    const { data, error } = await supabase.from("credit_cards").select("id, name, bank_name, bank_account_id, brand, card_type, credit_limit_cents, closing_days_before_due, due_day, color, is_active").eq("workspace_id", workspace.id).order("is_active", { ascending: false }).order("name");
     if (error) throw new Error("Não foi possível carregar os cartões.");
     return (data as CreditCardRow[]).map(mapCard);
   }
@@ -68,7 +68,7 @@ export class SupabaseCreditCardRepository implements CreditCardRepository {
     if (!user) throw new Error("Sua sessão expirou. Entre novamente para continuar.");
     const bankName = await this.resolveBankName(input.bankAccountId, workspace.id);
 
-    const { error } = await supabase.from("credit_cards").insert({ bank_account_id: input.bankAccountId, bank_name: bankName, brand: input.brand, card_type: input.cardType, closing_day: input.closingDay, color: input.color, credit_limit_cents: input.creditLimitCents, due_day: input.dueDay, name: input.name, user_id: user.id, workspace_id: workspace.id, created_by_id: user.id });
+    const { error } = await supabase.from("credit_cards").insert({ bank_account_id: input.bankAccountId, bank_name: bankName, brand: input.brand, card_type: input.cardType, closing_days_before_due: input.closingDaysBeforeDue, color: input.color, credit_limit_cents: input.creditLimitCents, due_day: input.dueDay, name: input.name, user_id: user.id, workspace_id: workspace.id, created_by_id: user.id });
     if (error?.code === "23505") throw new Error("Já existe um cartão com este nome.");
     if (error) throw new Error("Não foi possível cadastrar o cartão.");
   }
@@ -77,7 +77,7 @@ export class SupabaseCreditCardRepository implements CreditCardRepository {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
     const bankName = await this.resolveBankName(input.bankAccountId, workspace.id);
-    const { error } = await supabase.from("credit_cards").update({ bank_account_id: input.bankAccountId, bank_name: bankName, brand: input.brand, card_type: input.cardType, closing_day: input.closingDay, color: input.color, credit_limit_cents: input.creditLimitCents, due_day: input.dueDay, name: input.name }).eq("id", input.id).eq("workspace_id", workspace.id);
+    const { error } = await supabase.from("credit_cards").update({ bank_account_id: input.bankAccountId, bank_name: bankName, brand: input.brand, card_type: input.cardType, closing_days_before_due: input.closingDaysBeforeDue, color: input.color, credit_limit_cents: input.creditLimitCents, due_day: input.dueDay, name: input.name }).eq("id", input.id).eq("workspace_id", workspace.id);
     if (error?.code === "23505") throw new Error("Já existe um cartão com este nome.");
     if (error) throw new Error("Não foi possível atualizar o cartão.");
   }

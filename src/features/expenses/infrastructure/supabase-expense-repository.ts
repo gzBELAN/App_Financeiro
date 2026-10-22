@@ -17,6 +17,7 @@ type ExpenseRow = {
   installment_purchase_id: string | null;
   installment_number: number | null;
   installment_count: number | null;
+  installment_purchases: { first_installment_invoice_adjustment: -1 | 0 | 1 } | null;
   categories: { name: string; color: string } | null;
   bank_accounts: { name: string } | null;
 };
@@ -35,7 +36,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
     const workspace = await getActiveWorkspace();
     const { data, error } = await supabase
       .from("financial_entries")
-      .select("id, description, amount_cents, occurred_on, category_id, bank_account_id, credit_card_id, payment_method, notes, status, kind, installment_purchase_id, installment_number, installment_count, categories(name, color), bank_accounts(name)")
+      .select("id, description, amount_cents, occurred_on, category_id, bank_account_id, credit_card_id, payment_method, notes, status, kind, installment_purchase_id, installment_number, installment_count, categories(name, color), bank_accounts(name), installment_purchases(first_installment_invoice_adjustment)")
       .eq("workspace_id", workspace.id)
       .is("recurring_rule_id", null)
       .order("occurred_on", { ascending: false })
@@ -58,6 +59,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
       installmentNumber: expense.installment_number,
       installmentCount: expense.installment_count,
       installmentAmountCents: expense.installment_number ? expense.amount_cents : null,
+      firstInstallmentInvoiceAdjustment: expense.installment_purchases?.first_installment_invoice_adjustment ?? null,
       notes: expense.notes,
       occurredOn: expense.occurred_on,
       paymentMethod: expense.payment_method,
@@ -80,6 +82,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
         ...first,
         amountCents: totalAmountCents,
         installmentAmountCents: firstInstallment.amountCents,
+        firstInstallmentInvoiceAdjustment: first.firstInstallmentInvoiceAdjustment,
         installmentNumber: null,
         occurredOn: firstInstallment.occurredOn,
         status: hasPendingInstallment ? "pending" : first.status,

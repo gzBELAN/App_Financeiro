@@ -22,6 +22,7 @@ export type Expense = {
   installmentNumber: number | null;
   installmentCount: number | null;
   installmentAmountCents: number | null;
+  firstInstallmentInvoiceAdjustment: -1 | 0 | 1 | null;
 };
 
 export type ExpenseInput = {

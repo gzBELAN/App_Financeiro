@@ -9,7 +9,7 @@ export type CreditCard = {
   brand: string;
   cardType: CardType;
   creditLimitCents: number;
-  closingDay: number;
+  closingDaysBeforeDue: number;
   dueDay: number;
   color: string;
   isActive: boolean;
