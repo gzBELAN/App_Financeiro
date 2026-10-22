@@ -35,7 +35,7 @@ export class SupabaseInstallmentPurchaseRepository implements InstallmentPurchas
       notes: purchase.notes,
       purchaseDate: purchase.purchase_date,
       totalAmountCents: purchase.total_amount_cents,
-    }));
+    })).filter((purchase) => purchase.installments.some((installment) => installment.status === "pending"));
   }
 
   async create(input: CreateInstallmentPurchaseInput): Promise<void> {
@@ -82,10 +82,7 @@ export class SupabaseInstallmentPurchaseRepository implements InstallmentPurchas
   async delete(id: string): Promise<void> {
     const supabase = await createClient();
     const workspace = await getActiveWorkspace();
-    const { count, error: countError } = await supabase.from("financial_entries").select("id", { count: "exact", head: true }).eq("installment_purchase_id", id).eq("workspace_id", workspace.id).eq("status", "paid");
-    if (countError) throw new Error("Não foi possível verificar o histórico do parcelamento.");
-    if (count) throw new Error("Este parcelamento possui parcelas pagas e não pode ser excluído. Mantenha-o para preservar o histórico.");
     const { error } = await supabase.from("installment_purchases").delete().eq("id", id).eq("workspace_id", workspace.id);
-    if (error) throw new Error("Não foi possível excluir a compra parcelada.");
+    if (error) throw new Error("Não foi possível excluir a compra parcelada e suas parcelas.");
   }
 }

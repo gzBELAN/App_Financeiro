@@ -43,7 +43,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
 
     if (error) throw new Error("Não foi possível carregar as despesas.");
 
-    return (data as unknown as ExpenseRow[]).map((expense) => ({
+    const entries = (data as unknown as ExpenseRow[]).map((expense) => ({
       amountCents: expense.amount_cents,
       bankAccountId: expense.bank_account_id,
       bankAccountName: expense.bank_accounts?.name ?? null,
@@ -57,11 +57,36 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
       installmentPurchaseId: expense.installment_purchase_id,
       installmentNumber: expense.installment_number,
       installmentCount: expense.installment_count,
+      installmentAmountCents: expense.installment_number ? expense.amount_cents : null,
       notes: expense.notes,
       occurredOn: expense.occurred_on,
       paymentMethod: expense.payment_method,
       status: expense.status,
     }));
+
+    const result: Expense[] = [];
+    const purchases = new Map<string, Expense[]>();
+    for (const entry of entries) {
+      if (!entry.installmentPurchaseId) result.push(entry);
+      else purchases.set(entry.installmentPurchaseId, [...(purchases.get(entry.installmentPurchaseId) ?? []), entry]);
+    }
+
+    for (const installments of purchases.values()) {
+      const first = installments[0];
+      const totalAmountCents = installments.reduce((total, installment) => total + installment.amountCents, 0);
+      const firstInstallment = [...installments].sort((left, right) => (left.installmentNumber ?? 0) - (right.installmentNumber ?? 0))[0];
+      const hasPendingInstallment = installments.some((installment) => installment.status === "pending");
+      result.push({
+        ...first,
+        amountCents: totalAmountCents,
+        installmentAmountCents: firstInstallment.amountCents,
+        installmentNumber: null,
+        occurredOn: firstInstallment.occurredOn,
+        status: hasPendingInstallment ? "pending" : first.status,
+      });
+    }
+
+    return result.sort((left, right) => right.occurredOn.localeCompare(left.occurredOn));
   }
 
   async create(input: ExpenseInput): Promise<void> {
