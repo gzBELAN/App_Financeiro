@@ -102,6 +102,52 @@ from public.financial_entries e
 join public.credit_cards c on c.id = e.credit_card_id and c.workspace_id = e.workspace_id
 where e.kind = 'expense' and e.payment_method = 'credit_card' and e.status <> 'cancelled';
 
+-- Assinaturas no cartão também usam o vencimento dinâmico para o status da cobrança.
+create or replace function public.generate_recurring_entries(p_rule_id uuid)
+returns integer
+language plpgsql
+security invoker
+set search_path = public
+as $$
+declare
+  v_rule public.recurring_rules%rowtype;
+  v_months integer;
+  v_period date;
+  v_date date;
+  v_due_date date;
+  v_due_day smallint;
+  v_closing_days smallint;
+  v_created integer := 0;
+begin
+  select * into v_rule
+  from public.recurring_rules
+  where id = p_rule_id and public.can_edit_workspace(workspace_id) and is_active;
+
+  if not found then raise exception 'Recurring rule not found or editor permission is required'; end if;
+  if v_rule.payment_method = 'credit_card' then
+    select due_day, closing_days_before_due into v_due_day, v_closing_days
+    from public.credit_cards
+    where id = v_rule.credit_card_id and workspace_id = v_rule.workspace_id and is_active;
+    if not found then raise exception 'Credit card not found'; end if;
+  end if;
+
+  v_months := case v_rule.frequency when 'monthly' then 1 when 'quarterly' then 3 when 'semiannual' then 6 when 'annual' then 12 end;
+  v_period := date_trunc('month', v_rule.starts_on)::date;
+  while v_period <= date_trunc('month', v_rule.generate_until)::date loop
+    v_date := make_date(extract(year from v_period)::integer, extract(month from v_period)::integer, least(v_rule.billing_day, extract(day from (v_period + interval '1 month - 1 day'))::integer));
+    if v_date >= v_rule.starts_on and v_date <= v_rule.generate_until and (v_rule.ends_on is null or v_date <= v_rule.ends_on) then
+      v_due_date := case when v_rule.payment_method = 'credit_card' then public.invoice_due_date(v_date, v_due_day, v_closing_days) else null end;
+      insert into public.financial_entries (workspace_id, created_by_id, user_id, kind, description, amount_cents, occurred_on, category_id, payment_method, credit_card_id, recurring_rule_id, status, notes)
+      values (v_rule.workspace_id, v_rule.created_by_id, v_rule.user_id, 'expense', v_rule.description, v_rule.amount_cents, v_date, v_rule.category_id, v_rule.payment_method, v_rule.credit_card_id, v_rule.id, case when v_due_date is not null and v_due_date < current_date then 'paid'::public.entry_status else 'pending'::public.entry_status end, v_rule.notes)
+      on conflict (recurring_rule_id, occurred_on) do nothing;
+      if found then v_created := v_created + 1; end if;
+    end if;
+    v_period := (v_period + make_interval(months => v_months))::date;
+  end loop;
+  return v_created;
+end;
+$$;
+
 drop function if exists public.create_installment_purchase(text, bigint, smallint, date, uuid, uuid, text, uuid);
 create or replace function public.create_installment_purchase(
   p_description text, p_total_amount_cents bigint, p_installment_count smallint,

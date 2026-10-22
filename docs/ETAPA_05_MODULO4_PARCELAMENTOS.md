@@ -36,6 +36,8 @@ Para permitir a correção completa de uma compra parcelada pela lista de lança
 
 Para ciclos de cartão dinâmicos, execute por último `supabase/migrations/20261022_dynamic_card_billing_cycles.sql`. O vencimento passa para o próximo dia útil quando cair em sábado, domingo ou feriado nacional fixo; o fechamento é calculado por dias corridos antes do vencimento cadastrado. A migração também recalcula o status de todas as parcelas e lançamentos de cartão existentes. Feriados estaduais e municipais não são considerados nesta configuração.
 
+Assinaturas vinculadas a um cartão geram lançamentos com `payment_method = 'credit_card'` e fazem parte da fatura desse cartão. A migração de ciclos dinâmicos também aplica o cálculo de fatura e status a esses lançamentos recorrentes.
+
 O script usa comandos seguros de recriação para funções e views, mas tipos e tabelas não usam `if not exists`. Portanto, em uma base já inicializada, execute **somente** o bloco iniciado pelo comentário `-- Cria uma compra parcelada` e terminado antes de `-- View somente de leitura`.
 
 ## Funcionalidades entregues

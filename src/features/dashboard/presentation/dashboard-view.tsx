@@ -70,7 +70,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
   const cards = useMemo<CardDefinition[]>(
     () => [
       { accent: "text-primary", description: "Valor líquido planejado para o mês selecionado.", id: "salary", label: "Salário planejado", value: data.monthlySalaryCents },
-      { description: "Contas, cartões e demais despesas previstas no mês.", id: "monthly-expenses", label: "Gastos do mês", value: data.monthlyExpenseCents },
+      { description: "Despesas sem cartão pela data do lançamento e cartões pelo vencimento da fatura.", id: "monthly-expenses", label: "Gastos do mês", value: data.monthlyExpenseCents },
       { accent: data.salaryRemainingCents < 0 ? "text-red-600" : "text-emerald-600", description: "Salário planejado menos todos os gastos do mês.", id: "salary-remaining", label: "Sobra projetada", value: data.salaryRemainingCents },
       { accent: data.balanceCents < 0 ? "text-red-600" : "text-emerald-600", description: "Receitas pagas menos despesas pagas até o fim do período.", id: "balance", label: "Saldo calculado", value: data.balanceCents },
       { description: "Total de despesas previstas após o mês selecionado.", id: "future", label: "Despesas futuras", value: data.futureExpenseCents },
@@ -182,7 +182,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       <section className="grid gap-6 xl:grid-cols-2">
         <article className="rounded-xl border bg-card p-5 shadow-sm">
           <h2 className="text-lg font-semibold">Gastos por cartão</h2>
-          <p className="text-sm text-muted-foreground">Compras no cartão registradas no mês selecionado.</p>
+          <p className="text-sm text-muted-foreground">Compras e assinaturas incluídas nas faturas com vencimento no mês selecionado.</p>
           {data.cardBreakdown.length ? (
             <div className="mt-5 h-72">
               <ResponsiveContainer height="100%" width="100%">

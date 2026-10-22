@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveWorkspace } from "@/lib/workspaces/active-workspace";
 
 type EntryRow = { id: string; kind: "expense" | "income"; description: string; amount_cents: number; occurred_on: string; status: "pending" | "paid" | "cancelled"; categories: { name: string; color: string } | null; credit_cards: { name: string; color: string } | null };
+type InvoiceItemRow = { credit_card_id: string; credit_card_name: string; amount_cents: number; due_date: string; status: "pending" | "paid" };
 type GoalRow = { id: string; name: string; current_amount_cents: number; target_amount_cents: number; color: string };
 
 function monthBounds(referenceMonth: string) {
@@ -23,25 +24,29 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     const historyStart = monthKey(new Date(Date.UTC(year, month - 7, 1)));
     const historyStartDate = `${historyStart}-01`;
 
-    const [entriesResult, goalsResult, workspaceResult] = await Promise.all([
+    const [entriesResult, invoiceItemsResult, goalsResult, workspaceResult] = await Promise.all([
       supabase.from("financial_entries").select("id, kind, description, amount_cents, occurred_on, status, categories(name, color), credit_cards(name, color)").eq("workspace_id", workspace.id).neq("status", "cancelled").order("occurred_on", { ascending: false }),
+      supabase.from("credit_card_invoice_items").select("credit_card_id, credit_card_name, amount_cents, due_date, status").eq("workspace_id", workspace.id).gte("due_date", firstDay).lte("due_date", lastDay),
       supabase.from("financial_goals").select("id, name, current_amount_cents, target_amount_cents, color").eq("workspace_id", workspace.id).eq("is_archived", false).order("created_at", { ascending: false }).limit(4),
       supabase.from("financial_workspaces").select("monthly_salary_cents").eq("id", workspace.id).single(),
     ]);
     if (entriesResult.error) throw new Error("Não foi possível carregar os indicadores financeiros.");
+    if (invoiceItemsResult.error) throw new Error("Não foi possível carregar as faturas do período.");
     if (goalsResult.error) throw new Error("Não foi possível carregar os objetivos financeiros.");
     if (workspaceResult.error) throw new Error("Não foi possível carregar o planejamento mensal.");
 
     const entries = entriesResult.data as unknown as EntryRow[];
+    const invoiceItems = invoiceItemsResult.data as unknown as InvoiceItemRow[];
     const goals = goalsResult.data as GoalRow[];
     const paidEntriesUntilPeriod = entries.filter((entry) => entry.status === "paid" && entry.occurred_on <= lastDay);
     const balanceCents = paidEntriesUntilPeriod.reduce((sum, entry) => sum + (entry.kind === "income" ? entry.amount_cents : -entry.amount_cents), 0);
     const monthExpenses = entries.filter((entry) => entry.kind === "expense" && entry.occurred_on >= firstDay && entry.occurred_on <= lastDay);
-    const monthlyExpenseCents = monthExpenses.reduce((sum, entry) => sum + entry.amount_cents, 0);
+    const nonCardMonthExpenses = monthExpenses.filter((entry) => !entry.credit_cards);
+    const monthlyExpenseCents = nonCardMonthExpenses.reduce((sum, entry) => sum + entry.amount_cents, 0) + invoiceItems.reduce((sum, item) => sum + item.amount_cents, 0);
     const monthlySalaryCents = Number(workspaceResult.data.monthly_salary_cents ?? 0);
     const futureEntries = entries.filter((entry) => entry.kind === "expense" && entry.occurred_on > lastDay);
     const futureExpenseCents = futureEntries.reduce((sum, entry) => sum + entry.amount_cents, 0);
-    const pendingExpenseCents = monthExpenses.filter((entry) => entry.status === "pending").reduce((sum, entry) => sum + entry.amount_cents, 0);
+    const pendingExpenseCents = nonCardMonthExpenses.filter((entry) => entry.status === "pending").reduce((sum, entry) => sum + entry.amount_cents, 0) + invoiceItems.filter((item) => item.status === "pending").reduce((sum, item) => sum + item.amount_cents, 0);
     const projectedPeriodEndCents = balanceCents - pendingExpenseCents;
     const alerts: DashboardAlert[] = [];
     if (projectedPeriodEndCents < 0) alerts.push({ description: `Após pagar os lançamentos pendentes, a projeção é ${Math.abs(projectedPeriodEndCents)} centavos negativa.`, id: "negative-projection", severity: "critical", title: "Projeção de caixa negativa" });
@@ -54,10 +59,11 @@ export class SupabaseDashboardRepository implements DashboardRepository {
       const categoryName = entry.categories?.name ?? "Sem categoria";
       const categoryCurrent = categoryMap.get(categoryName) ?? { color: entry.categories?.color ?? "#94A3B8", value: 0 };
       categoryMap.set(categoryName, { ...categoryCurrent, value: categoryCurrent.value + entry.amount_cents });
-      if (entry.credit_cards) {
-        const cardCurrent = cardMap.get(entry.credit_cards.name) ?? { color: entry.credit_cards.color, value: 0 };
-        cardMap.set(entry.credit_cards.name, { ...cardCurrent, value: cardCurrent.value + entry.amount_cents });
-      }
+    });
+    const cardColors = new Map(entries.filter((entry) => entry.credit_cards).map((entry) => [entry.credit_cards!.name, entry.credit_cards!.color]));
+    invoiceItems.forEach((item) => {
+      const cardCurrent = cardMap.get(item.credit_card_name) ?? { color: cardColors.get(item.credit_card_name) ?? "#94A3B8", value: 0 };
+      cardMap.set(item.credit_card_name, { ...cardCurrent, value: cardCurrent.value + item.amount_cents });
     });
 
     const evolution = new Map<string, MonthlyEvolutionDatum>();
