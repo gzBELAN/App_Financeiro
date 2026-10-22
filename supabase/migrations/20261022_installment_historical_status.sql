@@ -3,8 +3,8 @@
 
 begin;
 
--- Parcelas com competência anterior à data atual representam cobranças já liquidadas.
--- A competência de hoje e as futuras seguem pendentes para compor as faturas abertas.
+-- Parcelas são consideradas pagas somente depois da data de vencimento da fatura.
+-- Dessa forma, fechamento e vencimento do cartão definem corretamente a fatura ainda aberta.
 create or replace function public.create_installment_purchase(
   p_description text,
   p_total_amount_cents bigint,
@@ -28,6 +28,9 @@ declare
   v_number smallint;
   v_month date;
   v_date date;
+  v_due_date date;
+  v_closing_day smallint;
+  v_due_day smallint;
 begin
   if not public.can_edit_workspace(p_workspace_id) then
     raise exception 'Editor permission is required';
@@ -37,10 +40,12 @@ begin
     raise exception 'Invalid installment values';
   end if;
 
-  if not exists (
-    select 1 from public.credit_cards
-    where id = p_credit_card_id and workspace_id = p_workspace_id and is_active
-  ) then
+  select closing_day, due_day
+  into v_closing_day, v_due_day
+  from public.credit_cards
+  where id = p_credit_card_id and workspace_id = p_workspace_id and is_active;
+
+  if not found then
     raise exception 'Credit card not found';
   end if;
 
@@ -68,6 +73,7 @@ begin
       extract(month from v_month)::integer,
       least(extract(day from p_purchase_date)::integer, extract(day from (v_month + interval '1 month - 1 day'))::integer)
     );
+    v_due_date := public.invoice_due_date(v_date, v_closing_day, v_due_day);
 
     insert into public.financial_entries (
       workspace_id, created_by_id, user_id, kind, description, amount_cents,
@@ -78,7 +84,7 @@ begin
       v_base_amount + case when v_number <= v_remainder then 1 else 0 end,
       v_date, p_category_id, 'credit_card', p_credit_card_id,
       v_purchase_id, v_number, p_installment_count,
-      case when v_date < current_date then 'paid'::public.entry_status else 'pending'::public.entry_status end,
+      case when v_due_date < current_date then 'paid'::public.entry_status else 'pending'::public.entry_status end,
       nullif(trim(p_notes), '')
     );
   end loop;
