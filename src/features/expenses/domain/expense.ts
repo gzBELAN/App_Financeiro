@@ -13,6 +13,7 @@ export type Expense = {
   categoryColor: string | null;
   bankAccountId: string | null;
   bankAccountName: string | null;
+  creditCardId: string | null;
   paymentMethod: PaymentMethod;
   notes: string | null;
   status: "pending" | "paid" | "cancelled";
@@ -28,6 +29,7 @@ export type ExpenseInput = {
   occurredOn: string;
   categoryId?: string;
   bankAccountId?: string;
+  creditCardId?: string;
   paymentMethod: PaymentMethod;
   notes?: string;
   status: "pending" | "paid";

@@ -9,6 +9,7 @@ type ExpenseRow = {
   occurred_on: string;
   category_id: string | null;
   bank_account_id: string | null;
+  credit_card_id: string | null;
   payment_method: Expense["paymentMethod"];
   notes: string | null;
   status: Expense["status"];
@@ -34,7 +35,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
     const workspace = await getActiveWorkspace();
     const { data, error } = await supabase
       .from("financial_entries")
-      .select("id, description, amount_cents, occurred_on, category_id, bank_account_id, payment_method, notes, status, kind, installment_purchase_id, installment_number, installment_count, categories(name, color), bank_accounts(name)")
+      .select("id, description, amount_cents, occurred_on, category_id, bank_account_id, credit_card_id, payment_method, notes, status, kind, installment_purchase_id, installment_number, installment_count, categories(name, color), bank_accounts(name)")
       .eq("workspace_id", workspace.id)
       .is("recurring_rule_id", null)
       .order("occurred_on", { ascending: false })
@@ -49,6 +50,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
       categoryColor: expense.categories?.color ?? null,
       categoryId: expense.category_id,
       categoryName: expense.categories?.name ?? null,
+      creditCardId: expense.credit_card_id,
       description: expense.description,
       id: expense.id,
       kind: expense.kind,
@@ -72,6 +74,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
       amount_cents: input.amountCents,
       bank_account_id: input.bankAccountId || null,
       category_id: input.categoryId || null,
+      credit_card_id: input.creditCardId || null,
       description: input.description,
       kind: input.kind,
       notes: input.notes || null,
@@ -93,6 +96,7 @@ export class SupabaseExpenseRepository implements ExpenseRepository {
       amount_cents: input.amountCents,
       bank_account_id: input.bankAccountId || null,
       category_id: input.categoryId || null,
+      credit_card_id: input.creditCardId || null,
       description: input.description,
       kind: input.kind,
       notes: input.notes || null,

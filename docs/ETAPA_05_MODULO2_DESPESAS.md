@@ -11,7 +11,7 @@ O módulo mantém a estrutura em camadas por funcionalidade:
 - `infrastructure`: persistência e leitura no Supabase.
 - `presentation`: formulário e lista responsiva de lançamentos.
 
-Valores inseridos como `12,50`, `12.50` ou `R$ 12,50` são convertidos para centavos antes da gravação. O banco permanece responsável pela integridade, RLS e constraints. O formulário registra receitas ou despesas avulsas; o saldo inicial é uma receita com a data de referência. Compras parceladas também são gerenciadas na página de lançamentos, em uma seção própria.
+Valores inseridos como `12,50`, `12.50` ou `R$ 12,50` são convertidos para centavos antes da gravação. O banco permanece responsável pela integridade, RLS e constraints. O formulário registra apenas receitas ou despesas; o saldo inicial é uma receita com a data de referência. Ao selecionar uma despesa no cartão, a pessoa informa o cartão e a quantidade de parcelas — `1x` cria uma despesa única na fatura e valores acima de `1x` criam a compra parcelada e suas competências futuras.
 
 Cada lançamento é vinculado ao controle financeiro ativo. Receitas e despesas avulsas podem, opcionalmente, ser associadas a uma conta bancária ativa; o vínculo é gravado em `financial_entries.bank_account_id` e exibido no histórico. Assim, participantes autorizados veem o mesmo lançamento, enquanto dados de outros controles não são incluídos.
 
@@ -28,6 +28,7 @@ Cada lançamento é vinculado ao controle financeiro ativo. Receitas e despesas 
 ## Funcionalidades entregues
 
 - Cadastro de receitas e despesas com descrição, valor, data, categoria, conta bancária opcional, forma de pagamento, status e observações.
+- Despesa no cartão com seleção de cartão e parcelamento de `1x` a `360x` no mesmo formulário; compras no cartão entram pendentes na fatura.
 - Edição e exclusão de lançamentos avulsos.
 - Registro de saldo inicial como receita.
 - Inclusão e consulta de compras parceladas na mesma rota.
@@ -35,7 +36,7 @@ Cada lançamento é vinculado ao controle financeiro ativo. Receitas e despesas 
 - Categoria opcional, com identificação visual por cor.
 - Validação de formato, valores positivos, tamanho de campos e data.
 - Atualização de lançamentos, dashboard e relatórios após cada alteração.
-- Lançamentos avulsos não aceitam cartão de crédito sem vínculo; use a seção de compras parceladas ou assinaturas para esse meio de pagamento.
+- Lançamentos no cartão exigem um cartão ativo. Em `1x`, é criado um lançamento único vinculado ao cartão; acima de `1x`, o fluxo cria a compra parcelada e mantém o controle detalhado das parcelas.
 
 ## Rota protegida
 
@@ -49,11 +50,12 @@ O middleware existente exige uma sessão válida antes de entregar a página.
 2. Inicie a aplicação manualmente com `npm run dev`.
 3. Entre na aplicação e crie pelo menos uma categoria em `/categories`.
 4. Acesse `http://localhost:3000/expenses`.
-5. Após cadastrar uma conta em `/cards`, registre uma despesa com valor `125,90`, categoria, conta bancária e forma de pagamento.
+5. Após cadastrar uma conta e um cartão em `/cards`, registre uma despesa com valor `125,90`, categoria, cartão e `1x`; confirme que ela aparece como pendente na próxima fatura.
 6. Confirme que o valor é exibido como `R$ 125,90`.
 7. Edite a despesa, marque-a como pendente e valide a atualização.
-8. Registre uma receita ou saldo inicial e confirme o sinal positivo na lista e o reflexo no dashboard.
-9. Exclua um lançamento e confirme que ele deixa de aparecer na lista.
+8. Registre uma despesa no cartão em mais de `1x` e confirme a criação das competências no controle de parcelamentos e nas faturas correspondentes.
+9. Registre uma receita ou saldo inicial e confirme o sinal positivo na lista e o reflexo no dashboard.
+10. Exclua um lançamento e confirme que ele deixa de aparecer na lista.
 
 > Compras parceladas continuam vinculadas ao cartão escolhido. Como cada cartão pertence a uma conta, o vínculo bancário é preservado pela relação do cartão.
 

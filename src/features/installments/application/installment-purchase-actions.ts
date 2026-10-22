@@ -16,8 +16,8 @@ export async function createInstallmentPurchase(_: InstallmentActionState, formD
     description: String(formData.get("description") ?? ""),
     installmentCount: String(formData.get("installmentCount") ?? ""),
     notes: String(formData.get("notes") ?? ""),
-    purchaseDate: String(formData.get("purchaseDate") ?? ""),
-    totalAmount: String(formData.get("totalAmount") ?? ""),
+    purchaseDate: String(formData.get("purchaseDate") ?? formData.get("occurredOn") ?? ""),
+    totalAmount: String(formData.get("totalAmount") ?? formData.get("amount") ?? ""),
   });
   if ("error" in input) return input;
 
