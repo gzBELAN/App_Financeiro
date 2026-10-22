@@ -8,9 +8,9 @@ import type { DashboardData } from "@/features/dashboard/domain/dashboard";
 
 const DASHBOARD_CARDS_STORAGE_KEY = "app-financeiro-dashboard-cards";
 
-type CardIdentifier = "salary" | "monthly-expenses" | "salary-remaining" | "balance" | "future" | "pending";
+type CardIdentifier = "salary" | "monthly-expenses" | "salary-remaining" | "balance" | "future" | "pending" | "next-salary";
 
-const DEFAULT_VISIBLE_CARDS: CardIdentifier[] = ["salary", "monthly-expenses", "salary-remaining", "balance", "pending"];
+const DEFAULT_VISIBLE_CARDS: CardIdentifier[] = ["salary", "monthly-expenses", "salary-remaining", "next-salary", "pending"];
 
 type KpiCardProperties = {
   accent?: string;
@@ -75,6 +75,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       { accent: data.balanceCents < 0 ? "text-red-600" : "text-emerald-600", description: "Receitas pagas menos despesas pagas até o fim do período.", id: "balance", label: "Saldo calculado", value: data.balanceCents },
       { description: "Total de despesas previstas após o mês selecionado.", id: "future", label: "Despesas futuras", value: data.futureExpenseCents },
       { accent: "text-amber-600", description: "Despesas ainda pendentes dentro do período selecionado.", id: "pending", label: "A pagar no mês", value: data.pendingExpenseCents },
+      { accent: data.nextSalaryCommitmentCents > data.monthlySalaryCents ? "text-red-600" : "text-amber-600", description: `Faturas: ${formatCurrency(data.nextSalaryCardInvoiceCents)} · contas e recorrências: ${formatCurrency(data.nextSalaryNonCardExpenseCents)}.`, id: "next-salary", label: "Comprometido do próximo salário", value: data.nextSalaryCommitmentCents },
     ],
     [data],
   );
@@ -109,7 +110,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       <section className="grid gap-3 rounded-xl border bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 lg:grid-cols-[1fr_auto] lg:items-center">
         <div>
           <h2 className="font-semibold">Organize sua próxima decisão financeira</h2>
-          <p className="mt-1 text-sm text-muted-foreground">O saldo calculado considera apenas lançamentos pagos. Use as contas bancárias para acompanhar saldos conciliados informados manualmente.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Planeje o salário por compromissos futuros: faturas, contas fixas e assinaturas. Este painel não representa saldo de conta corrente em tempo real.</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Link className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground" href="/expenses">Novo lançamento</Link>
