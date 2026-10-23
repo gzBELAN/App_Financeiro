@@ -27,14 +27,6 @@ type CardDefinition = KpiCardProperties & {
 const formatCurrency = (cents: number) => new Intl.NumberFormat("pt-BR", { currency: "BRL", style: "currency" }).format(cents / 100);
 const formatDate = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(`${value}T00:00:00`));
 const tooltipFormatter = (value: number) => formatCurrency(value);
-const renderPiePercentageLabel = ({ cx, cy, innerRadius, midAngle, outerRadius, percent }: { cx: number; cy: number; innerRadius: number; midAngle: number; outerRadius: number; percent: number }) => {
-  if (percent < 0.05) return null;
-  const radius = outerRadius + 18;
-  const angle = (-midAngle * Math.PI) / 180;
-  const x = cx + radius * Math.cos(angle);
-  const y = cy + radius * Math.sin(angle);
-  return <text dominantBaseline="central" fill="hsl(var(--foreground))" fontSize="12" fontWeight="700" paintOrder="stroke" stroke="hsl(var(--card))" strokeWidth="4" textAnchor={x >= cx ? "start" : "end"} x={x} y={y}>{`${(percent * 100).toFixed(0)}%`}</text>;
-};
 
 function KpiCard({ label, value, description, accent = "text-foreground", onDetails }: KpiCardProperties & { onDetails?: () => void }) {
   return (
@@ -183,6 +175,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
   }
 
   const selectedCards = cards.filter((card) => visibleCards.includes(card.id));
+  const plannedCategoryTotal = data.categoryBreakdown.reduce((sum, category) => sum + category.value, 0);
 
   return (
     <div className="space-y-6">
@@ -240,16 +233,19 @@ export function DashboardView({ data }: { data: DashboardData }) {
           <p className="text-sm text-muted-foreground">Distribuição das saídas já previstas para o próximo salário.</p>
           {data.categoryBreakdown.length ? (
             <>
-            <div className="mt-5 h-80">
+            <div className="mt-5 h-72">
               <ResponsiveContainer height="100%" width="100%">
-                <PieChart margin={{ bottom: 42, left: 42, right: 42, top: 42 }}>
-                  <Pie cx="50%" cy="50%" data={data.categoryBreakdown} dataKey="value" label={renderPiePercentageLabel} labelLine={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1 }} nameKey="name" outerRadius="50%">
+                <PieChart margin={{ bottom: 8, left: 8, right: 8, top: 8 }}>
+                  <Pie cx="50%" cy="50%" data={data.categoryBreakdown} dataKey="value" label={false} nameKey="name" outerRadius="78%">
                     {data.categoryBreakdown.map((item) => <Cell fill={item.color} key={item.name} />)}
                   </Pie>
-                  <Tooltip formatter={tooltipFormatter} />
+                  <Tooltip formatter={(value: number) => `${formatCurrency(value)} · ${plannedCategoryTotal ? ((value / plannedCategoryTotal) * 100).toFixed(0) : 0}%`} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
+            <ul aria-label="Percentuais das categorias" className="mt-3 grid gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
+              {data.categoryBreakdown.map((category) => <li className="flex min-w-0 items-start gap-2" key={category.name}><span aria-hidden="true" className="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: category.color }} /><span className="min-w-0 flex-1 break-words text-muted-foreground">{category.name}</span><strong className="shrink-0">{plannedCategoryTotal ? ((category.value / plannedCategoryTotal) * 100).toFixed(0) : 0}%</strong></li>)}
+            </ul>
             <button className="mt-2 text-sm font-medium text-primary hover:underline" onClick={() => setIsCategoryDetailsOpen(true)} type="button">Ver detalhes por categoria</button>
             </>
           ) : <EmptyChart />}
