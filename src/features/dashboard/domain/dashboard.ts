@@ -15,6 +15,7 @@ export type DashboardData = {
   pendingExpenseDetails: DashboardExpenseDetail[];
   alerts: DashboardAlert[];
   categoryBreakdown: ChartDatum[];
+  categoryExpenseDetails: DashboardExpenseGroup[];
   cardBreakdown: ChartDatum[];
   monthlyEvolution: MonthlyEvolutionDatum[];
   goals: DashboardGoal[];
@@ -22,9 +23,10 @@ export type DashboardData = {
 };
 
 export type ChartDatum = { name: string; value: number; color: string };
+export type DashboardExpenseGroup = { name: string; color: string; items: DashboardExpenseDetail[] };
 export type MonthlyEvolutionDatum = { month: string; expenses: number; income: number };
 export type DashboardGoal = { id: string; name: string; currentCents: number; targetCents: number; color: string };
-export type DashboardExpenseDetail = { id: string; description: string; amountCents: number; date: string; purchaseDate?: string; installmentNumber?: number; installmentCount?: number; source: "Fatura do cartão" | "Lançamento"; status: "pending" | "paid"; cardName?: string };
+export type DashboardExpenseDetail = { id: string; description: string; amountCents: number; date: string; purchaseDate?: string; installmentNumber?: number; installmentCount?: number; source: "Fatura do cartão" | "Lançamento"; status: "pending" | "paid"; cardName?: string; categoryName?: string };
 export type RecentEntry = { id: string; description: string; occurredOn: string; amountCents: number; status: "pending" | "paid" | "cancelled"; categoryName: string | null; categoryColor: string | null };
 export type DashboardAlert = { id: "salary-budget" | "pending-payments" | "next-salary-budget"; severity: "warning" | "critical"; title: string; description: string };
 

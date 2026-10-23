@@ -34,6 +34,9 @@ Todos os cálculos também são filtrados pelo controle financeiro ativo, evitan
 
 - Resumo visual do próximo salário no início do dashboard, consolidando salário previsto, saídas previstas e sobra projetada em um único cartão com indicador de comprometimento e acesso aos detalhes.
 - Ordem mobile orientada a resultado: o resumo financeiro aparece antes dos atalhos, alertas e opções de personalização, reduzindo a necessidade de rolagem para consultar a informação principal.
+- Seletor de período com largura responsiva para não extrapolar o cabeçalho em telas pequenas.
+- Gráfico de categorias sem rótulos externos que possam ser cortados em mobile; os detalhes ficam disponíveis em uma janela agrupada por categoria.
+- Janelas de detalhes agrupados usam linhas inteiras recolhíveis, com setas direcionais à direita para expandir ou ocultar lançamentos.
 - Indicadores do topo personalizáveis pelo usuário, persistidos somente no navegador.
 - Ações rápidas para registrar lançamento e consultar contas/cartões.
 - Separação explícita entre **saldo calculado** (lançamentos pagos) e saldo conciliado informado em contas bancárias.

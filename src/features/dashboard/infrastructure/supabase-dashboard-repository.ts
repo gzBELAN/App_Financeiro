@@ -51,9 +51,10 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     const nextSalaryCardInvoiceCents = nextSalaryInvoiceItems.filter((item) => item.status === "pending").reduce((sum, item) => sum + item.amount_cents, 0);
     const nextSalaryFixedExpenseCents = nextMonthFixedExpenses.reduce((sum, entry) => sum + entry.amount_cents, 0);
     const nextSalaryCommitmentCents = nextSalaryCardInvoiceCents + nextSalaryFixedExpenseCents;
+    const entryCategories = new Map(entries.map((entry) => [entry.id, entry.categories?.name ?? "Sem categoria"]));
     const monthlyExpenseDetails = [
-      ...nonCardMonthExpenses.map((entry) => ({ amountCents: entry.amount_cents, date: entry.occurred_on, description: entry.description, id: entry.id, source: "Lançamento" as const, status: entry.status === "paid" ? "paid" as const : "pending" as const })),
-      ...currentInvoiceItems.map((item) => ({ amountCents: item.amount_cents, date: item.due_date, description: `${item.description} · ${item.credit_card_name}`, id: item.entry_id, source: "Fatura do cartão" as const, status: item.status })),
+      ...nonCardMonthExpenses.map((entry) => ({ amountCents: entry.amount_cents, categoryName: entry.categories?.name ?? "Sem categoria", date: entry.occurred_on, description: entry.description, id: entry.id, source: "Lançamento" as const, status: entry.status === "paid" ? "paid" as const : "pending" as const })),
+      ...currentInvoiceItems.map((item) => ({ amountCents: item.amount_cents, categoryName: entryCategories.get(item.entry_id) ?? "Sem categoria", date: item.due_date, description: `${item.description} · ${item.credit_card_name}`, id: item.entry_id, source: "Fatura do cartão" as const, status: item.status })),
     ].sort((left, right) => left.date.localeCompare(right.date));
     const pendingExpenseDetails = monthlyExpenseDetails.filter((item) => item.status === "pending");
     const nextSalaryCommitmentDetails: DashboardExpenseDetail[] = [
@@ -67,11 +68,15 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     if (monthlySalaryCents > 0 && nextSalaryCommitmentCents > monthlySalaryCents) alerts.push({ description: `O próximo período já possui ${nextSalaryCommitmentCents} centavos comprometidos.`, id: "next-salary-budget", severity: "warning", title: "Próximo salário comprometido" });
 
     const categoryMap = new Map<string, { value: number; color: string }>();
+    const categoryDetailsMap = new Map<string, { color: string; items: DashboardExpenseDetail[] }>();
     const cardMap = new Map<string, { value: number; color: string }>();
     monthExpenses.forEach((entry) => {
       const categoryName = entry.categories?.name ?? "Sem categoria";
       const categoryCurrent = categoryMap.get(categoryName) ?? { color: entry.categories?.color ?? "#94A3B8", value: 0 };
       categoryMap.set(categoryName, { ...categoryCurrent, value: categoryCurrent.value + entry.amount_cents });
+      const categoryDetails = categoryDetailsMap.get(categoryName) ?? { color: entry.categories?.color ?? "#94A3B8", items: [] };
+      categoryDetails.items.push({ amountCents: entry.amount_cents, categoryName, date: entry.occurred_on, description: entry.description, id: entry.id, source: "Lançamento", status: entry.status === "paid" ? "paid" : "pending" });
+      categoryDetailsMap.set(categoryName, categoryDetails);
     });
     const cardColors = new Map(entries.filter((entry) => entry.credit_cards).map((entry) => [entry.credit_cards!.name, entry.credit_cards!.color]));
     currentInvoiceItems.forEach((item) => {
@@ -94,6 +99,7 @@ export class SupabaseDashboardRepository implements DashboardRepository {
       alerts,
       cardBreakdown: [...cardMap.entries()].map(([name, item]) => ({ name, ...item })).sort((a, b) => b.value - a.value),
       categoryBreakdown: [...categoryMap.entries()].map(([name, item]) => ({ name, ...item })).sort((a, b) => b.value - a.value),
+      categoryExpenseDetails: [...categoryDetailsMap.entries()].map(([name, group]) => ({ ...group, items: group.items.sort((left, right) => right.date.localeCompare(left.date)), name })).sort((left, right) => right.items.reduce((sum, item) => sum + item.amountCents, 0) - left.items.reduce((sum, item) => sum + item.amountCents, 0)),
       goals: goals.map((goal) => ({ color: goal.color, currentCents: goal.current_amount_cents, id: goal.id, name: goal.name, targetCents: goal.target_amount_cents })),
       monthlyEvolution: [...evolution.values()],
       monthlyExpenseCents,

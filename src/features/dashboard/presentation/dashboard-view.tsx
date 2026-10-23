@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { Bar, BarChart, Cell, Legend, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
-import type { DashboardData, DashboardExpenseDetail } from "@/features/dashboard/domain/dashboard";
+import type { DashboardData, DashboardExpenseDetail, DashboardExpenseGroup } from "@/features/dashboard/domain/dashboard";
 
 const DASHBOARD_CARDS_STORAGE_KEY = "app-financeiro-dashboard-cards";
 
@@ -38,16 +39,32 @@ function KpiCard({ label, value, description, accent = "text-foreground", onDeta
   );
 }
 
+function CollapsibleDetailGroup({ children, color, items, name }: { children: (item: DashboardExpenseDetail) => ReactNode; color?: string; items: DashboardExpenseDetail[]; name: string }) {
+  const [isOpen, setIsOpen] = useState(true);
+  const total = items.reduce((sum, item) => sum + item.amountCents, 0);
+  return <section className="overflow-hidden rounded-lg border"><button aria-expanded={isOpen} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/60" onClick={() => setIsOpen((current) => !current)} type="button"><span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: color ?? "hsl(var(--primary))" }} /><span className="min-w-0 flex-1 truncate font-semibold">{name}</span><strong className="shrink-0 text-sm">{formatCurrency(total)}</strong>{isOpen ? <ChevronUp aria-hidden="true" className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronDown aria-hidden="true" className="h-5 w-5 shrink-0 text-muted-foreground" />}</button>{isOpen ? <ul className="divide-y border-t">{items.map(children)}</ul> : null}</section>;
+}
+
+function DetailItem({ item, showPurchaseDetails = false }: { item: DashboardExpenseDetail; showPurchaseDetails?: boolean }) {
+  return <li className="flex items-center justify-between gap-4 px-4 py-3" key={`${item.source}-${item.id}`}><div className="min-w-0"><p className="truncate font-medium">{item.description}</p><p className="mt-1 text-sm text-muted-foreground">{showPurchaseDetails && item.purchaseDate ? `Compra: ${formatDate(item.purchaseDate)} · ` : ""}{showPurchaseDetails && item.installmentNumber && item.installmentCount ? `Parcela: ${item.installmentNumber}/${item.installmentCount} · ` : ""}{showPurchaseDetails ? `Vencimento: ${formatDate(item.date)}` : `${formatDate(item.date)} · ${item.source} · ${item.status === "paid" ? "Pago" : "Pendente"}`}</p></div><strong className="shrink-0">{formatCurrency(item.amountCents)}</strong></li>;
+}
+
 function ExpenseDetailsDialog({ items, onClose, title }: { items: DashboardExpenseDetail[]; onClose: () => void; title: string }) {
-  return <div aria-labelledby="expense-details-title" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={onClose} role="dialog"><section className="max-h-[80vh] w-full max-w-xl overflow-hidden rounded-xl border bg-card shadow-xl" onMouseDown={(event) => event.stopPropagation()}><header className="flex items-start justify-between gap-4 border-b p-5"><div><h2 className="text-lg font-semibold" id="expense-details-title">{title}</h2><p className="mt-1 text-sm text-muted-foreground">{items.length} item(ns) que compõem o total.</p></div><button aria-label="Fechar detalhes" className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" onClick={onClose} type="button">Fechar</button></header>{items.length ? <ul className="max-h-[55vh] divide-y overflow-y-auto">{items.map((item) => <li className="flex items-center justify-between gap-4 p-4" key={`${item.source}-${item.id}`}><div className="min-w-0"><p className="truncate font-medium">{item.description}</p><p className="mt-1 text-sm text-muted-foreground">{formatDate(item.date)} · {item.source} · {item.status === "paid" ? "Pago" : "Pendente"}</p></div><strong className="shrink-0">{formatCurrency(item.amountCents)}</strong></li>)}</ul> : <p className="p-5 text-sm text-muted-foreground">Não há itens neste total.</p>}</section></div>;
+  const groups = new Map<string, DashboardExpenseDetail[]>();
+  items.forEach((item) => groups.set(item.source, [...(groups.get(item.source) ?? []), item]));
+  return <div aria-labelledby="expense-details-title" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={onClose} role="dialog"><section className="max-h-[80vh] w-full max-w-xl overflow-hidden rounded-xl border bg-card shadow-xl" onMouseDown={(event) => event.stopPropagation()}><header className="flex items-start justify-between gap-4 border-b p-5"><div><h2 className="text-lg font-semibold" id="expense-details-title">{title}</h2><p className="mt-1 text-sm text-muted-foreground">{items.length} item(ns) que compõem o total.</p></div><button aria-label="Fechar detalhes" className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" onClick={onClose} type="button">Fechar</button></header>{items.length ? <div className="max-h-[55vh] space-y-3 overflow-y-auto p-5">{[...groups.entries()].map(([name, groupItems]) => <CollapsibleDetailGroup items={groupItems} key={name} name={name}>{(item) => <DetailItem item={item} key={`${item.source}-${item.id}`} />}</CollapsibleDetailGroup>)}</div> : <p className="p-5 text-sm text-muted-foreground">Não há itens neste total.</p>}</section></div>;
+}
+
+function CategoryDetailsDialog({ groups, onClose }: { groups: DashboardExpenseGroup[]; onClose: () => void }) {
+  return <div aria-labelledby="category-details-title" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={onClose} role="dialog"><section className="max-h-[80vh] w-full max-w-xl overflow-hidden rounded-xl border bg-card shadow-xl" onMouseDown={(event) => event.stopPropagation()}><header className="flex items-start justify-between gap-4 border-b p-5"><div><h2 className="text-lg font-semibold" id="category-details-title">Detalhes por categoria</h2><p className="mt-1 text-sm text-muted-foreground">Lançamentos que compõem os gastos do mês.</p></div><button aria-label="Fechar detalhes" className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" onClick={onClose} type="button">Fechar</button></header><div className="max-h-[55vh] space-y-3 overflow-y-auto p-5">{groups.map((group) => <CollapsibleDetailGroup color={group.color} items={group.items} key={group.name} name={group.name}>{(item) => <DetailItem item={item} key={`${item.source}-${item.id}`} />}</CollapsibleDetailGroup>)}</div></section></div>;
 }
 
 function CommitmentDetailsDialog({ items, onClose }: { items: DashboardExpenseDetail[]; onClose: () => void }) {
   const cardGroups = new Map<string, DashboardExpenseDetail[]>();
   const fixedExpenses = items.filter((item) => item.source === "Lançamento");
   items.filter((item) => item.source === "Fatura do cartão").forEach((item) => cardGroups.set(item.cardName ?? "Cartão", [...(cardGroups.get(item.cardName ?? "Cartão") ?? []), item]));
-  const renderItems = (groupItems: DashboardExpenseDetail[]) => <ul className="divide-y">{[...groupItems].sort((left, right) => (right.purchaseDate ?? right.date).localeCompare(left.purchaseDate ?? left.date)).map((item) => <li className="flex items-center justify-between gap-4 py-3" key={`${item.source}-${item.id}`}><div className="min-w-0"><p className="truncate font-medium">{item.description}</p><p className="mt-1 text-sm text-muted-foreground">{item.purchaseDate ? `Compra: ${formatDate(item.purchaseDate)} · ` : ""}{item.installmentNumber && item.installmentCount ? `Parcela: ${item.installmentNumber}/${item.installmentCount} · ` : ""}Vencimento: {formatDate(item.date)}</p></div><strong className="shrink-0">{formatCurrency(item.amountCents)}</strong></li>)}</ul>;
-  return <div aria-labelledby="commitment-details-title" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={onClose} role="dialog"><section className="max-h-[80vh] w-full max-w-xl overflow-hidden rounded-xl border bg-card shadow-xl" onMouseDown={(event) => event.stopPropagation()}><header className="flex items-start justify-between gap-4 border-b p-5"><div><h2 className="text-lg font-semibold" id="commitment-details-title">Compromissos do próximo salário</h2><p className="mt-1 text-sm text-muted-foreground">Faturas em aberto agrupadas por cartão e contas fixas previstas.</p></div><button aria-label="Fechar detalhes" className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" onClick={onClose} type="button">Fechar</button></header><div className="max-h-[55vh] space-y-5 overflow-y-auto p-5">{[...cardGroups.entries()].map(([cardName, cardItems]) => <section key={cardName}><div className="flex items-center justify-between gap-4"><h3 className="font-semibold">{cardName}</h3><strong>{formatCurrency(cardItems.reduce((sum, item) => sum + item.amountCents, 0))}</strong></div>{renderItems(cardItems)}</section>)}{fixedExpenses.length ? <section><div className="flex items-center justify-between gap-4"><h3 className="font-semibold">Contas fixas</h3><strong>{formatCurrency(fixedExpenses.reduce((sum, item) => sum + item.amountCents, 0))}</strong></div>{renderItems(fixedExpenses)}</section> : null}{items.length === 0 ? <p className="text-sm text-muted-foreground">Não há compromissos pendentes para o próximo mês.</p> : null}</div></section></div>;
+  const sortedItems = (groupItems: DashboardExpenseDetail[]) => [...groupItems].sort((left, right) => (right.purchaseDate ?? right.date).localeCompare(left.purchaseDate ?? left.date));
+  return <div aria-labelledby="commitment-details-title" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={onClose} role="dialog"><section className="max-h-[80vh] w-full max-w-xl overflow-hidden rounded-xl border bg-card shadow-xl" onMouseDown={(event) => event.stopPropagation()}><header className="flex items-start justify-between gap-4 border-b p-5"><div><h2 className="text-lg font-semibold" id="commitment-details-title">Compromissos do próximo salário</h2><p className="mt-1 text-sm text-muted-foreground">Faturas em aberto agrupadas por cartão e contas fixas previstas.</p></div><button aria-label="Fechar detalhes" className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" onClick={onClose} type="button">Fechar</button></header><div className="max-h-[55vh] space-y-3 overflow-y-auto p-5">{[...cardGroups.entries()].map(([cardName, cardItems]) => <CollapsibleDetailGroup items={sortedItems(cardItems)} key={cardName} name={cardName}>{(item) => <DetailItem item={item} key={`${item.source}-${item.id}`} showPurchaseDetails />}</CollapsibleDetailGroup>)}{fixedExpenses.length ? <CollapsibleDetailGroup items={sortedItems(fixedExpenses)} name="Contas fixas">{(item) => <DetailItem item={item} key={`${item.source}-${item.id}`} showPurchaseDetails />}</CollapsibleDetailGroup> : null}{items.length === 0 ? <p className="text-sm text-muted-foreground">Não há compromissos pendentes para o próximo mês.</p> : null}</div></section></div>;
 }
 
 function NextSalarySummaryCard({ cardInvoiceCents, fixedExpenseCents, onDetails, remainingCents, salaryCents, totalCents }: { cardInvoiceCents: number; fixedExpenseCents: number; onDetails: () => void; remainingCents: number; salaryCents: number; totalCents: number }) {
@@ -124,6 +141,7 @@ function DashboardCustomization({
 export function DashboardView({ data }: { data: DashboardData }) {
   const [details, setDetails] = useState<{ items: DashboardExpenseDetail[]; title: string } | null>(null);
   const [isCommitmentDetailsOpen, setIsCommitmentDetailsOpen] = useState(false);
+  const [isCategoryDetailsOpen, setIsCategoryDetailsOpen] = useState(false);
   const cards = useMemo<CardDefinition[]>(
     () => [
       { description: "Despesas sem cartão pela data do lançamento e cartões pelo vencimento da fatura.", id: "monthly-expenses", label: "Gastos do mês", value: data.monthlyExpenseCents },
@@ -212,16 +230,19 @@ export function DashboardView({ data }: { data: DashboardData }) {
           <h2 className="text-lg font-semibold">Gastos por categoria</h2>
           <p className="text-sm text-muted-foreground">Distribuição das despesas no mês selecionado.</p>
           {data.categoryBreakdown.length ? (
-            <div className="mt-5 h-72">
+            <>
+            <div className="mt-5 h-72 overflow-hidden">
               <ResponsiveContainer height="100%" width="100%">
-                <PieChart>
-                  <Pie data={data.categoryBreakdown} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} nameKey="name" outerRadius={95}>
+                <PieChart margin={{ bottom: 12, left: 0, right: 0, top: 12 }}>
+                  <Pie data={data.categoryBreakdown} dataKey="value" label={false} nameKey="name" outerRadius="72%">
                     {data.categoryBreakdown.map((item) => <Cell fill={item.color} key={item.name} />)}
                   </Pie>
                   <Tooltip formatter={tooltipFormatter} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
+            <button className="mt-2 text-sm font-medium text-primary hover:underline" onClick={() => setIsCategoryDetailsOpen(true)} type="button">Ver detalhes por categoria</button>
+            </>
           ) : <EmptyChart />}
         </article>
       </section>
@@ -298,6 +319,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       </section>
       {details ? <ExpenseDetailsDialog items={details.items} onClose={() => setDetails(null)} title={details.title} /> : null}
       {isCommitmentDetailsOpen ? <CommitmentDetailsDialog items={data.nextSalaryCommitmentDetails} onClose={() => setIsCommitmentDetailsOpen(false)} /> : null}
+      {isCategoryDetailsOpen ? <CategoryDetailsDialog groups={data.categoryExpenseDetails} onClose={() => setIsCategoryDetailsOpen(false)} /> : null}
     </div>
   );
 }
