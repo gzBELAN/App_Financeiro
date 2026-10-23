@@ -29,9 +29,9 @@ const formatDate = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateSty
 const tooltipFormatter = (value: number) => formatCurrency(value);
 const renderPiePercentageLabel = ({ cx, cy, innerRadius, midAngle, outerRadius, percent }: { cx: number; cy: number; innerRadius: number; midAngle: number; outerRadius: number; percent: number }) => {
   if (percent < 0.05) return null;
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.52;
+  const radius = outerRadius + 22;
   const angle = (-midAngle * Math.PI) / 180;
-  return <text dominantBaseline="central" fill="white" fontSize="12" fontWeight="600" textAnchor="middle" x={cx + radius * Math.cos(angle)} y={cy + radius * Math.sin(angle)}>{`${(percent * 100).toFixed(0)}%`}</text>;
+  return <text dominantBaseline="central" fill="hsl(var(--foreground))" fontSize="12" fontWeight="700" paintOrder="stroke" stroke="hsl(var(--card))" strokeWidth="4" textAnchor="middle" x={cx + radius * Math.cos(angle)} y={cy + radius * Math.sin(angle)}>{`${(percent * 100).toFixed(0)}%`}</text>;
 };
 
 function KpiCard({ label, value, description, accent = "text-foreground", onDetails }: KpiCardProperties & { onDetails?: () => void }) {
@@ -238,10 +238,10 @@ export function DashboardView({ data }: { data: DashboardData }) {
           <p className="text-sm text-muted-foreground">Distribuição das saídas já previstas para o próximo salário.</p>
           {data.categoryBreakdown.length ? (
             <>
-            <div className="mt-5 h-72 overflow-hidden">
+            <div className="mt-5 h-80">
               <ResponsiveContainer height="100%" width="100%">
-                <PieChart margin={{ bottom: 12, left: 0, right: 0, top: 12 }}>
-                  <Pie data={data.categoryBreakdown} dataKey="value" label={renderPiePercentageLabel} labelLine={false} nameKey="name" outerRadius="72%">
+                <PieChart margin={{ bottom: 28, left: 28, right: 28, top: 28 }}>
+                  <Pie data={data.categoryBreakdown} dataKey="value" label={renderPiePercentageLabel} labelLine={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1 }} nameKey="name" outerRadius="58%">
                     {data.categoryBreakdown.map((item) => <Cell fill={item.color} key={item.name} />)}
                   </Pie>
                   <Tooltip formatter={tooltipFormatter} />

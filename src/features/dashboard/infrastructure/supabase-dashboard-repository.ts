@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getActiveWorkspace } from "@/lib/workspaces/active-workspace";
 
 type EntryRow = { id: string; kind: "expense" | "income"; description: string; amount_cents: number; occurred_on: string; status: "pending" | "paid" | "cancelled"; categories: { name: string; color: string } | null; credit_cards: { name: string; color: string } | null; recurring_rules: { rule_type: "fixed_expense" | "subscription" } | null };
-type InvoiceItemRow = { entry_id: string; credit_card_id: string; credit_card_name: string; description: string; amount_cents: number; occurred_on: string; purchase_date: string | null; installment_number: number | null; installment_count: number | null; due_date: string; status: "pending" | "paid" };
+type InvoiceItemRow = { entry_id: string; credit_card_id: string; credit_card_name: string; description: string; amount_cents: number; occurred_on: string; purchase_date: string | null; installment_number: number | null; installment_count: number | null; due_date: string; status: "pending" | "paid"; category_name: string | null; category_color: string | null };
 type GoalRow = { id: string; name: string; current_amount_cents: number; target_amount_cents: number; color: string };
 
 function monthBounds(referenceMonth: string) {
@@ -28,7 +28,7 @@ export class SupabaseDashboardRepository implements DashboardRepository {
 
     const [entriesResult, invoiceItemsResult, goalsResult, workspaceResult] = await Promise.all([
       supabase.from("financial_entries").select("id, kind, description, amount_cents, occurred_on, status, categories(name, color), credit_cards(name, color), recurring_rules(rule_type)").eq("workspace_id", workspace.id).neq("status", "cancelled").order("occurred_on", { ascending: false }),
-      supabase.from("credit_card_invoice_items").select("entry_id, credit_card_id, credit_card_name, description, amount_cents, occurred_on, purchase_date, installment_number, installment_count, due_date, status").eq("workspace_id", workspace.id).gte("due_date", historyStartDate).lte("due_date", nextMonthLastDay),
+      supabase.from("credit_card_invoice_items").select("entry_id, credit_card_id, credit_card_name, description, amount_cents, occurred_on, purchase_date, installment_number, installment_count, due_date, status, category_name, category_color").eq("workspace_id", workspace.id).gte("due_date", historyStartDate).lte("due_date", nextMonthLastDay),
       supabase.from("financial_goals").select("id, name, current_amount_cents, target_amount_cents, color").eq("workspace_id", workspace.id).eq("is_archived", false).order("created_at", { ascending: false }).limit(4),
       supabase.from("financial_workspaces").select("monthly_salary_cents").eq("id", workspace.id).single(),
     ]);
@@ -55,11 +55,11 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     const entryCategoryColors = new Map(entries.map((entry) => [entry.id, entry.categories?.color ?? "#94A3B8"]));
     const monthlyExpenseDetails = [
       ...nonCardMonthExpenses.map((entry) => ({ amountCents: entry.amount_cents, categoryName: entry.categories?.name ?? "Sem categoria", date: entry.occurred_on, description: entry.description, id: entry.id, source: "Lançamento" as const, status: entry.status === "paid" ? "paid" as const : "pending" as const })),
-      ...currentInvoiceItems.map((item) => ({ amountCents: item.amount_cents, cardName: item.credit_card_name, categoryName: entryCategories.get(item.entry_id) ?? "Sem categoria", date: item.due_date, description: item.description, id: item.entry_id, installmentCount: item.installment_count ?? undefined, installmentNumber: item.installment_number ?? undefined, purchaseDate: item.purchase_date ?? item.occurred_on, source: "Fatura do cartão" as const, status: item.status })),
+      ...currentInvoiceItems.map((item) => ({ amountCents: item.amount_cents, cardName: item.credit_card_name, categoryName: item.category_name ?? entryCategories.get(item.entry_id) ?? "Sem categoria", date: item.due_date, description: item.description, id: item.entry_id, installmentCount: item.installment_count ?? undefined, installmentNumber: item.installment_number ?? undefined, purchaseDate: item.purchase_date ?? item.occurred_on, source: "Fatura do cartão" as const, status: item.status })),
     ].sort((left, right) => left.date.localeCompare(right.date));
     const pendingExpenseDetails = monthlyExpenseDetails.filter((item) => item.status === "pending");
     const nextSalaryCommitmentDetails: DashboardExpenseDetail[] = [
-      ...nextSalaryInvoiceItems.filter((item) => item.status === "pending").map((item) => ({ amountCents: item.amount_cents, cardName: item.credit_card_name, categoryName: entryCategories.get(item.entry_id) ?? "Sem categoria", date: item.due_date, description: item.description, id: item.entry_id, installmentCount: item.installment_count ?? undefined, installmentNumber: item.installment_number ?? undefined, purchaseDate: item.purchase_date ?? item.occurred_on, source: "Fatura do cartão" as const, status: item.status })),
+      ...nextSalaryInvoiceItems.filter((item) => item.status === "pending").map((item) => ({ amountCents: item.amount_cents, cardName: item.credit_card_name, categoryName: item.category_name ?? entryCategories.get(item.entry_id) ?? "Sem categoria", date: item.due_date, description: item.description, id: item.entry_id, installmentCount: item.installment_count ?? undefined, installmentNumber: item.installment_number ?? undefined, purchaseDate: item.purchase_date ?? item.occurred_on, source: "Fatura do cartão" as const, status: item.status })),
       ...nextMonthFixedExpenses.map((entry) => ({ amountCents: entry.amount_cents, categoryName: entry.categories?.name ?? "Sem categoria", date: entry.occurred_on, description: entry.description, id: entry.id, source: "Lançamento" as const, status: "pending" as const })),
     ];
     nextSalaryCommitmentDetails.sort((left, right) => (right.purchaseDate ?? right.date).localeCompare(left.purchaseDate ?? left.date));
@@ -72,7 +72,8 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     const cardMap = new Map<string, { value: number; color: string }>();
     nextSalaryCommitmentDetails.forEach((item) => {
       const categoryName = item.categoryName ?? "Sem categoria";
-      const categoryDetails = categoryDetailsMap.get(categoryName) ?? { color: entryCategoryColors.get(item.id) ?? "#94A3B8", items: [] };
+      const invoiceItem = invoiceItems.find((invoice) => invoice.entry_id === item.id);
+      const categoryDetails = categoryDetailsMap.get(categoryName) ?? { color: invoiceItem?.category_color ?? entryCategoryColors.get(item.id) ?? "#94A3B8", items: [] };
       categoryDetails.items.push(item);
       categoryDetailsMap.set(categoryName, categoryDetails);
     });
