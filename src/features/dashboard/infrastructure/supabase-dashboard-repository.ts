@@ -52,14 +52,15 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     const nextSalaryFixedExpenseCents = nextMonthFixedExpenses.reduce((sum, entry) => sum + entry.amount_cents, 0);
     const nextSalaryCommitmentCents = nextSalaryCardInvoiceCents + nextSalaryFixedExpenseCents;
     const entryCategories = new Map(entries.map((entry) => [entry.id, entry.categories?.name ?? "Sem categoria"]));
+    const entryCategoryColors = new Map(entries.map((entry) => [entry.id, entry.categories?.color ?? "#94A3B8"]));
     const monthlyExpenseDetails = [
       ...nonCardMonthExpenses.map((entry) => ({ amountCents: entry.amount_cents, categoryName: entry.categories?.name ?? "Sem categoria", date: entry.occurred_on, description: entry.description, id: entry.id, source: "Lançamento" as const, status: entry.status === "paid" ? "paid" as const : "pending" as const })),
-      ...currentInvoiceItems.map((item) => ({ amountCents: item.amount_cents, categoryName: entryCategories.get(item.entry_id) ?? "Sem categoria", date: item.due_date, description: `${item.description} · ${item.credit_card_name}`, id: item.entry_id, source: "Fatura do cartão" as const, status: item.status })),
+      ...currentInvoiceItems.map((item) => ({ amountCents: item.amount_cents, cardName: item.credit_card_name, categoryName: entryCategories.get(item.entry_id) ?? "Sem categoria", date: item.due_date, description: item.description, id: item.entry_id, installmentCount: item.installment_count ?? undefined, installmentNumber: item.installment_number ?? undefined, purchaseDate: item.purchase_date ?? item.occurred_on, source: "Fatura do cartão" as const, status: item.status })),
     ].sort((left, right) => left.date.localeCompare(right.date));
     const pendingExpenseDetails = monthlyExpenseDetails.filter((item) => item.status === "pending");
     const nextSalaryCommitmentDetails: DashboardExpenseDetail[] = [
-      ...nextSalaryInvoiceItems.filter((item) => item.status === "pending").map((item) => ({ amountCents: item.amount_cents, cardName: item.credit_card_name, date: item.due_date, description: item.description, id: item.entry_id, installmentCount: item.installment_count ?? undefined, installmentNumber: item.installment_number ?? undefined, purchaseDate: item.purchase_date ?? item.occurred_on, source: "Fatura do cartão" as const, status: item.status })),
-      ...nextMonthFixedExpenses.map((entry) => ({ amountCents: entry.amount_cents, date: entry.occurred_on, description: entry.description, id: entry.id, source: "Lançamento" as const, status: "pending" as const })),
+      ...nextSalaryInvoiceItems.filter((item) => item.status === "pending").map((item) => ({ amountCents: item.amount_cents, cardName: item.credit_card_name, categoryName: entryCategories.get(item.entry_id) ?? "Sem categoria", date: item.due_date, description: item.description, id: item.entry_id, installmentCount: item.installment_count ?? undefined, installmentNumber: item.installment_number ?? undefined, purchaseDate: item.purchase_date ?? item.occurred_on, source: "Fatura do cartão" as const, status: item.status })),
+      ...nextMonthFixedExpenses.map((entry) => ({ amountCents: entry.amount_cents, categoryName: entry.categories?.name ?? "Sem categoria", date: entry.occurred_on, description: entry.description, id: entry.id, source: "Lançamento" as const, status: "pending" as const })),
     ];
     nextSalaryCommitmentDetails.sort((left, right) => (right.purchaseDate ?? right.date).localeCompare(left.purchaseDate ?? left.date));
     const alerts: DashboardAlert[] = [];
@@ -67,15 +68,12 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     if (pendingExpenseCents > 0) alerts.push({ description: `${pendingExpenseCents} centavos ainda aguardam pagamento no período selecionado.`, id: "pending-payments", severity: "warning", title: "Pagamentos pendentes" });
     if (monthlySalaryCents > 0 && nextSalaryCommitmentCents > monthlySalaryCents) alerts.push({ description: `O próximo período já possui ${nextSalaryCommitmentCents} centavos comprometidos.`, id: "next-salary-budget", severity: "warning", title: "Próximo salário comprometido" });
 
-    const categoryMap = new Map<string, { value: number; color: string }>();
     const categoryDetailsMap = new Map<string, { color: string; items: DashboardExpenseDetail[] }>();
     const cardMap = new Map<string, { value: number; color: string }>();
-    monthExpenses.forEach((entry) => {
-      const categoryName = entry.categories?.name ?? "Sem categoria";
-      const categoryCurrent = categoryMap.get(categoryName) ?? { color: entry.categories?.color ?? "#94A3B8", value: 0 };
-      categoryMap.set(categoryName, { ...categoryCurrent, value: categoryCurrent.value + entry.amount_cents });
-      const categoryDetails = categoryDetailsMap.get(categoryName) ?? { color: entry.categories?.color ?? "#94A3B8", items: [] };
-      categoryDetails.items.push({ amountCents: entry.amount_cents, categoryName, date: entry.occurred_on, description: entry.description, id: entry.id, source: "Lançamento", status: entry.status === "paid" ? "paid" : "pending" });
+    nextSalaryCommitmentDetails.forEach((item) => {
+      const categoryName = item.categoryName ?? "Sem categoria";
+      const categoryDetails = categoryDetailsMap.get(categoryName) ?? { color: entryCategoryColors.get(item.id) ?? "#94A3B8", items: [] };
+      categoryDetails.items.push(item);
       categoryDetailsMap.set(categoryName, categoryDetails);
     });
     const cardColors = new Map(entries.filter((entry) => entry.credit_cards).map((entry) => [entry.credit_cards!.name, entry.credit_cards!.color]));
@@ -98,8 +96,8 @@ export class SupabaseDashboardRepository implements DashboardRepository {
     return {
       alerts,
       cardBreakdown: [...cardMap.entries()].map(([name, item]) => ({ name, ...item })).sort((a, b) => b.value - a.value),
-      categoryBreakdown: [...categoryMap.entries()].map(([name, item]) => ({ name, ...item })).sort((a, b) => b.value - a.value),
-      categoryExpenseDetails: [...categoryDetailsMap.entries()].map(([name, group]) => ({ ...group, items: group.items.sort((left, right) => right.date.localeCompare(left.date)), name })).sort((left, right) => right.items.reduce((sum, item) => sum + item.amountCents, 0) - left.items.reduce((sum, item) => sum + item.amountCents, 0)),
+      categoryBreakdown: [...categoryDetailsMap.entries()].map(([name, group]) => ({ color: group.color, name, value: group.items.reduce((sum, item) => sum + item.amountCents, 0) })).sort((a, b) => b.value - a.value),
+      categoryExpenseDetails: [...categoryDetailsMap.entries()].map(([name, group]) => ({ ...group, items: group.items.sort((left, right) => right.date.localeCompare(left.date)), name, totalCents: group.items.reduce((sum, item) => sum + item.amountCents, 0) })).sort((left, right) => right.totalCents - left.totalCents),
       goals: goals.map((goal) => ({ color: goal.color, currentCents: goal.current_amount_cents, id: goal.id, name: goal.name, targetCents: goal.target_amount_cents })),
       monthlyEvolution: [...evolution.values()],
       monthlyExpenseCents,

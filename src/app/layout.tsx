@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import { ServiceWorkerRegistration } from "@/components/pwa/service-worker-registration";
@@ -24,6 +24,13 @@ export const metadata: Metadata = {
       { type: "image/svg+xml", url: "/icons/icon-512.svg" },
     ],
   },
+};
+
+export const viewport: Viewport = {
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  width: "device-width",
 };
 
 type RootLayoutProperties = Readonly<{

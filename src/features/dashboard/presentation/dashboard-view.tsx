@@ -27,6 +27,12 @@ type CardDefinition = KpiCardProperties & {
 const formatCurrency = (cents: number) => new Intl.NumberFormat("pt-BR", { currency: "BRL", style: "currency" }).format(cents / 100);
 const formatDate = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short" }).format(new Date(`${value}T00:00:00`));
 const tooltipFormatter = (value: number) => formatCurrency(value);
+const renderPiePercentageLabel = ({ cx, cy, innerRadius, midAngle, outerRadius, percent }: { cx: number; cy: number; innerRadius: number; midAngle: number; outerRadius: number; percent: number }) => {
+  if (percent < 0.05) return null;
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.52;
+  const angle = (-midAngle * Math.PI) / 180;
+  return <text dominantBaseline="central" fill="white" fontSize="12" fontWeight="600" textAnchor="middle" x={cx + radius * Math.cos(angle)} y={cy + radius * Math.sin(angle)}>{`${(percent * 100).toFixed(0)}%`}</text>;
+};
 
 function KpiCard({ label, value, description, accent = "text-foreground", onDetails }: KpiCardProperties & { onDetails?: () => void }) {
   return (
@@ -39,10 +45,10 @@ function KpiCard({ label, value, description, accent = "text-foreground", onDeta
   );
 }
 
-function CollapsibleDetailGroup({ children, color, items, name }: { children: (item: DashboardExpenseDetail) => ReactNode; color?: string; items: DashboardExpenseDetail[]; name: string }) {
-  const [isOpen, setIsOpen] = useState(true);
+function CollapsibleDetailGroup({ children, color, items, name, trailingText }: { children: (item: DashboardExpenseDetail) => ReactNode; color?: string; items: DashboardExpenseDetail[]; name: string; trailingText?: string }) {
+  const [isOpen, setIsOpen] = useState(false);
   const total = items.reduce((sum, item) => sum + item.amountCents, 0);
-  return <section className="overflow-hidden rounded-lg border"><button aria-expanded={isOpen} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/60" onClick={() => setIsOpen((current) => !current)} type="button"><span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: color ?? "hsl(var(--primary))" }} /><span className="min-w-0 flex-1 truncate font-semibold">{name}</span><strong className="shrink-0 text-sm">{formatCurrency(total)}</strong>{isOpen ? <ChevronUp aria-hidden="true" className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronDown aria-hidden="true" className="h-5 w-5 shrink-0 text-muted-foreground" />}</button>{isOpen ? <ul className="divide-y border-t">{items.map(children)}</ul> : null}</section>;
+  return <section className="overflow-hidden rounded-lg border"><button aria-expanded={isOpen} className="flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-muted/60" onClick={() => setIsOpen((current) => !current)} type="button"><span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: color ?? "hsl(var(--primary))" }} /><span className="min-w-0 flex-1 truncate font-semibold">{name}</span><span className="shrink-0 text-right"><strong className="block text-sm">{formatCurrency(total)}</strong>{trailingText ? <span className="text-xs text-muted-foreground">{trailingText}</span> : null}</span>{isOpen ? <ChevronUp aria-hidden="true" className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronDown aria-hidden="true" className="h-5 w-5 shrink-0 text-muted-foreground" />}</button>{isOpen ? <ul className="divide-y border-t">{items.map(children)}</ul> : null}</section>;
 }
 
 function DetailItem({ item, showPurchaseDetails = false }: { item: DashboardExpenseDetail; showPurchaseDetails?: boolean }) {
@@ -50,13 +56,14 @@ function DetailItem({ item, showPurchaseDetails = false }: { item: DashboardExpe
 }
 
 function ExpenseDetailsDialog({ items, onClose, title }: { items: DashboardExpenseDetail[]; onClose: () => void; title: string }) {
-  const groups = new Map<string, DashboardExpenseDetail[]>();
-  items.forEach((item) => groups.set(item.source, [...(groups.get(item.source) ?? []), item]));
-  return <div aria-labelledby="expense-details-title" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={onClose} role="dialog"><section className="max-h-[80vh] w-full max-w-xl overflow-hidden rounded-xl border bg-card shadow-xl" onMouseDown={(event) => event.stopPropagation()}><header className="flex items-start justify-between gap-4 border-b p-5"><div><h2 className="text-lg font-semibold" id="expense-details-title">{title}</h2><p className="mt-1 text-sm text-muted-foreground">{items.length} item(ns) que compõem o total.</p></div><button aria-label="Fechar detalhes" className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" onClick={onClose} type="button">Fechar</button></header>{items.length ? <div className="max-h-[55vh] space-y-3 overflow-y-auto p-5">{[...groups.entries()].map(([name, groupItems]) => <CollapsibleDetailGroup items={groupItems} key={name} name={name}>{(item) => <DetailItem item={item} key={`${item.source}-${item.id}`} />}</CollapsibleDetailGroup>)}</div> : <p className="p-5 text-sm text-muted-foreground">Não há itens neste total.</p>}</section></div>;
+  const cardGroups = new Map<string, DashboardExpenseDetail[]>();
+  const fixedExpenses = items.filter((item) => item.source === "Lançamento");
+  items.filter((item) => item.source === "Fatura do cartão").forEach((item) => cardGroups.set(item.cardName ?? "Cartão", [...(cardGroups.get(item.cardName ?? "Cartão") ?? []), item]));
+  return <div aria-labelledby="expense-details-title" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={onClose} role="dialog"><section className="max-h-[80vh] w-full max-w-xl overflow-hidden rounded-xl border bg-card shadow-xl" onMouseDown={(event) => event.stopPropagation()}><header className="flex items-start justify-between gap-4 border-b p-5"><div><h2 className="text-lg font-semibold" id="expense-details-title">{title}</h2><p className="mt-1 text-sm text-muted-foreground">{items.length} item(ns) que compõem o total.</p></div><button aria-label="Fechar detalhes" className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" onClick={onClose} type="button">Fechar</button></header>{items.length ? <div className="max-h-[55vh] space-y-3 overflow-y-auto p-5">{[...cardGroups.entries()].map(([name, groupItems]) => <CollapsibleDetailGroup items={groupItems} key={name} name={name}>{(item) => <DetailItem item={item} key={`${item.source}-${item.id}`} showPurchaseDetails />}</CollapsibleDetailGroup>)}{fixedExpenses.length ? <CollapsibleDetailGroup items={fixedExpenses} name="Lançamentos e contas">{(item) => <DetailItem item={item} key={`${item.source}-${item.id}`} />}</CollapsibleDetailGroup> : null}</div> : <p className="p-5 text-sm text-muted-foreground">Não há itens neste total.</p>}</section></div>;
 }
 
-function CategoryDetailsDialog({ groups, onClose }: { groups: DashboardExpenseGroup[]; onClose: () => void }) {
-  return <div aria-labelledby="category-details-title" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={onClose} role="dialog"><section className="max-h-[80vh] w-full max-w-xl overflow-hidden rounded-xl border bg-card shadow-xl" onMouseDown={(event) => event.stopPropagation()}><header className="flex items-start justify-between gap-4 border-b p-5"><div><h2 className="text-lg font-semibold" id="category-details-title">Detalhes por categoria</h2><p className="mt-1 text-sm text-muted-foreground">Lançamentos que compõem os gastos do mês.</p></div><button aria-label="Fechar detalhes" className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" onClick={onClose} type="button">Fechar</button></header><div className="max-h-[55vh] space-y-3 overflow-y-auto p-5">{groups.map((group) => <CollapsibleDetailGroup color={group.color} items={group.items} key={group.name} name={group.name}>{(item) => <DetailItem item={item} key={`${item.source}-${item.id}`} />}</CollapsibleDetailGroup>)}</div></section></div>;
+function CategoryDetailsDialog({ groups, onClose, totalCents }: { groups: DashboardExpenseGroup[]; onClose: () => void; totalCents: number }) {
+  return <div aria-labelledby="category-details-title" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onMouseDown={onClose} role="dialog"><section className="max-h-[80vh] w-full max-w-xl overflow-hidden rounded-xl border bg-card shadow-xl" onMouseDown={(event) => event.stopPropagation()}><header className="flex items-start justify-between gap-4 border-b p-5"><div><h2 className="text-lg font-semibold" id="category-details-title">Detalhes por categoria</h2><p className="mt-1 text-sm text-muted-foreground">Saídas já previstas para o próximo salário.</p></div><button aria-label="Fechar detalhes" className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted" onClick={onClose} type="button">Fechar</button></header><div className="border-b bg-muted/40 px-5 py-3 text-sm"><span className="text-muted-foreground">Total previsto</span><strong className="ml-2">{formatCurrency(totalCents)}</strong></div><div className="max-h-[55vh] space-y-3 overflow-y-auto p-5">{groups.map((group) => <CollapsibleDetailGroup color={group.color} items={group.items} key={group.name} name={group.name} trailingText={`${totalCents ? ((group.totalCents / totalCents) * 100).toFixed(0) : 0}%`}>{(item) => <DetailItem item={item} key={`${item.source}-${item.id}`} showPurchaseDetails /></CollapsibleDetailGroup>)}</div></section></div>;
 }
 
 function CommitmentDetailsDialog({ items, onClose }: { items: DashboardExpenseDetail[]; onClose: () => void }) {
@@ -144,8 +151,8 @@ export function DashboardView({ data }: { data: DashboardData }) {
   const [isCategoryDetailsOpen, setIsCategoryDetailsOpen] = useState(false);
   const cards = useMemo<CardDefinition[]>(
     () => [
-      { description: "Despesas sem cartão pela data do lançamento e cartões pelo vencimento da fatura.", id: "monthly-expenses", label: "Gastos do mês", value: data.monthlyExpenseCents },
-      { accent: "text-amber-600", description: "Despesas ainda pendentes dentro do período selecionado.", id: "pending", label: "A pagar no mês", value: data.pendingExpenseCents },
+      { description: "Despesas consolidadas no período selecionado, agrupadas por cartão e lançamentos.", id: "monthly-expenses", label: "Gastos do período fechado", value: data.monthlyExpenseCents },
+      { accent: "text-amber-600", description: "Despesas que continuam pendentes no período selecionado.", id: "pending", label: "Contas em aberto", value: data.pendingExpenseCents },
     ],
     [data],
   );
@@ -198,7 +205,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
 
       {selectedCards.length ? (
         <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          {selectedCards.map((card) => <KpiCard {...card} key={card.id} onDetails={card.id === "monthly-expenses" ? () => setDetails({ items: data.monthlyExpenseDetails, title: "Detalhes dos gastos do mês" }) : card.id === "pending" ? () => setDetails({ items: data.pendingExpenseDetails, title: "Detalhes do valor a pagar" }) : undefined} />)}
+          {selectedCards.map((card) => <KpiCard {...card} key={card.id} onDetails={card.id === "monthly-expenses" ? () => setDetails({ items: data.monthlyExpenseDetails, title: "Gastos do período fechado" }) : card.id === "pending" ? () => setDetails({ items: data.pendingExpenseDetails, title: "Contas em aberto" }) : undefined} />)}
         </section>
       ) : (
         <section className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
@@ -228,13 +235,13 @@ export function DashboardView({ data }: { data: DashboardData }) {
 
         <article className="rounded-xl border bg-card p-5 shadow-sm">
           <h2 className="text-lg font-semibold">Gastos por categoria</h2>
-          <p className="text-sm text-muted-foreground">Distribuição das despesas no mês selecionado.</p>
+          <p className="text-sm text-muted-foreground">Distribuição das saídas já previstas para o próximo salário.</p>
           {data.categoryBreakdown.length ? (
             <>
             <div className="mt-5 h-72 overflow-hidden">
               <ResponsiveContainer height="100%" width="100%">
                 <PieChart margin={{ bottom: 12, left: 0, right: 0, top: 12 }}>
-                  <Pie data={data.categoryBreakdown} dataKey="value" label={false} nameKey="name" outerRadius="72%">
+                  <Pie data={data.categoryBreakdown} dataKey="value" label={renderPiePercentageLabel} labelLine={false} nameKey="name" outerRadius="72%">
                     {data.categoryBreakdown.map((item) => <Cell fill={item.color} key={item.name} />)}
                   </Pie>
                   <Tooltip formatter={tooltipFormatter} />
@@ -319,7 +326,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       </section>
       {details ? <ExpenseDetailsDialog items={details.items} onClose={() => setDetails(null)} title={details.title} /> : null}
       {isCommitmentDetailsOpen ? <CommitmentDetailsDialog items={data.nextSalaryCommitmentDetails} onClose={() => setIsCommitmentDetailsOpen(false)} /> : null}
-      {isCategoryDetailsOpen ? <CategoryDetailsDialog groups={data.categoryExpenseDetails} onClose={() => setIsCategoryDetailsOpen(false)} /> : null}
+      {isCategoryDetailsOpen ? <CategoryDetailsDialog groups={data.categoryExpenseDetails} onClose={() => setIsCategoryDetailsOpen(false)} totalCents={data.nextSalaryCommitmentCents} /> : null}
     </div>
   );
 }

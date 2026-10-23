@@ -23,7 +23,7 @@ export type DashboardData = {
 };
 
 export type ChartDatum = { name: string; value: number; color: string };
-export type DashboardExpenseGroup = { name: string; color: string; items: DashboardExpenseDetail[] };
+export type DashboardExpenseGroup = { name: string; color: string; items: DashboardExpenseDetail[]; totalCents: number };
 export type MonthlyEvolutionDatum = { month: string; expenses: number; income: number };
 export type DashboardGoal = { id: string; name: string; currentCents: number; targetCents: number; color: string };
 export type DashboardExpenseDetail = { id: string; description: string; amountCents: number; date: string; purchaseDate?: string; installmentNumber?: number; installmentCount?: number; source: "Fatura do cartão" | "Lançamento"; status: "pending" | "paid"; cardName?: string; categoryName?: string };

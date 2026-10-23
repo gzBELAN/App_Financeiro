@@ -36,7 +36,10 @@ Todos os cálculos também são filtrados pelo controle financeiro ativo, evitan
 - Ordem mobile orientada a resultado: o resumo financeiro aparece antes dos atalhos, alertas e opções de personalização, reduzindo a necessidade de rolagem para consultar a informação principal.
 - Seletor de período com largura responsiva para não extrapolar o cabeçalho em telas pequenas.
 - Gráfico de categorias sem rótulos externos que possam ser cortados em mobile; os detalhes ficam disponíveis em uma janela agrupada por categoria.
-- Janelas de detalhes agrupados usam linhas inteiras recolhíveis, com setas direcionais à direita para expandir ou ocultar lançamentos.
+- Gráfico de categorias baseado nas saídas previstas para o próximo salário, com percentuais por fatia e total compatível com o resumo financeiro.
+- Janelas de detalhes agrupados iniciam recolhidas e usam linhas inteiras com setas direcionais à direita para expandir ou ocultar lançamentos.
+- Indicadores renomeados para **Gastos do período fechado** e **Contas em aberto**; o primeiro agrupa detalhes por cartão e lançamentos.
+- Viewport PWA configurado com escala inicial normal, evitando ampliação ao abrir o aplicativo no celular.
 - Indicadores do topo personalizáveis pelo usuário, persistidos somente no navegador.
 - Ações rápidas para registrar lançamento e consultar contas/cartões.
 - Separação explícita entre **saldo calculado** (lançamentos pagos) e saldo conciliado informado em contas bancárias.
