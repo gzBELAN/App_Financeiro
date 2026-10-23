@@ -38,6 +38,7 @@ Todos os cálculos também são filtrados pelo controle financeiro ativo, evitan
 - Gráfico de categorias sem rótulos externos que possam ser cortados em mobile; os detalhes ficam disponíveis em uma janela agrupada por categoria.
 - Gráfico de categorias baseado nas saídas previstas para o próximo salário, com percentuais por fatia e total compatível com o resumo financeiro.
 - Percentuais do gráfico de categorias são exibidos fora das fatias, com linhas-guia e contraste adequado; a visão de fatura preserva a categoria dos lançamentos recorrentes no cartão.
+- O gráfico reserva uma área interna segura para os percentuais externos em telas pequenas; os controles de cabeçalho ocupam somente a largura disponível e o viewport inicia em escala 1 sem bloquear o zoom manual.
 - Janelas de detalhes agrupados iniciam recolhidas e usam linhas inteiras com setas direcionais à direita para expandir ou ocultar lançamentos.
 - Indicadores renomeados para **Gastos do período fechado** e **Contas em aberto**; o primeiro agrupa detalhes por cartão e lançamentos.
 - Viewport PWA configurado com escala inicial normal, evitando ampliação ao abrir o aplicativo no celular.

@@ -29,9 +29,11 @@ const formatDate = (value: string) => new Intl.DateTimeFormat("pt-BR", { dateSty
 const tooltipFormatter = (value: number) => formatCurrency(value);
 const renderPiePercentageLabel = ({ cx, cy, innerRadius, midAngle, outerRadius, percent }: { cx: number; cy: number; innerRadius: number; midAngle: number; outerRadius: number; percent: number }) => {
   if (percent < 0.05) return null;
-  const radius = outerRadius + 22;
+  const radius = outerRadius + 18;
   const angle = (-midAngle * Math.PI) / 180;
-  return <text dominantBaseline="central" fill="hsl(var(--foreground))" fontSize="12" fontWeight="700" paintOrder="stroke" stroke="hsl(var(--card))" strokeWidth="4" textAnchor="middle" x={cx + radius * Math.cos(angle)} y={cy + radius * Math.sin(angle)}>{`${(percent * 100).toFixed(0)}%`}</text>;
+  const x = cx + radius * Math.cos(angle);
+  const y = cy + radius * Math.sin(angle);
+  return <text dominantBaseline="central" fill="hsl(var(--foreground))" fontSize="12" fontWeight="700" paintOrder="stroke" stroke="hsl(var(--card))" strokeWidth="4" textAnchor={x >= cx ? "start" : "end"} x={x} y={y}>{`${(percent * 100).toFixed(0)}%`}</text>;
 };
 
 function KpiCard({ label, value, description, accent = "text-foreground", onDetails }: KpiCardProperties & { onDetails?: () => void }) {
@@ -240,8 +242,8 @@ export function DashboardView({ data }: { data: DashboardData }) {
             <>
             <div className="mt-5 h-80">
               <ResponsiveContainer height="100%" width="100%">
-                <PieChart margin={{ bottom: 28, left: 28, right: 28, top: 28 }}>
-                  <Pie data={data.categoryBreakdown} dataKey="value" label={renderPiePercentageLabel} labelLine={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1 }} nameKey="name" outerRadius="58%">
+                <PieChart margin={{ bottom: 42, left: 42, right: 42, top: 42 }}>
+                  <Pie cx="50%" cy="50%" data={data.categoryBreakdown} dataKey="value" label={renderPiePercentageLabel} labelLine={{ stroke: "hsl(var(--muted-foreground))", strokeWidth: 1 }} nameKey="name" outerRadius="50%">
                     {data.categoryBreakdown.map((item) => <Cell fill={item.color} key={item.name} />)}
                   </Pie>
                   <Tooltip formatter={tooltipFormatter} />
