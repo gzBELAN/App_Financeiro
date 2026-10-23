@@ -28,7 +28,7 @@ export class SupabaseDashboardRepository implements DashboardRepository {
 
     const [entriesResult, invoiceItemsResult, goalsResult, workspaceResult] = await Promise.all([
       supabase.from("financial_entries").select("id, kind, description, amount_cents, occurred_on, status, categories(name, color), credit_cards(name, color), recurring_rules(rule_type)").eq("workspace_id", workspace.id).neq("status", "cancelled").order("occurred_on", { ascending: false }),
-      supabase.from("credit_card_invoice_items").select("entry_id, credit_card_id, credit_card_name, description, amount_cents, occurred_on, purchase_date, installment_number, installment_count, due_date, status").eq("workspace_id", workspace.id).gte("due_date", firstDay).lte("due_date", nextMonthLastDay),
+      supabase.from("credit_card_invoice_items").select("entry_id, credit_card_id, credit_card_name, description, amount_cents, occurred_on, purchase_date, installment_number, installment_count, due_date, status").eq("workspace_id", workspace.id).gte("due_date", historyStartDate).lte("due_date", nextMonthLastDay),
       supabase.from("financial_goals").select("id, name, current_amount_cents, target_amount_cents, color").eq("workspace_id", workspace.id).eq("is_archived", false).order("created_at", { ascending: false }).limit(4),
       supabase.from("financial_workspaces").select("monthly_salary_cents").eq("id", workspace.id).single(),
     ]);
@@ -87,10 +87,20 @@ export class SupabaseDashboardRepository implements DashboardRepository {
       const key = monthKey(new Date(Date.UTC(year, month - 1 - index, 1)));
       evolution.set(key, { expenses: 0, income: 0, month: monthLabel(key) });
     }
-    entries.filter((entry) => entry.occurred_on >= historyStartDate && entry.occurred_on <= lastDay).forEach((entry) => {
+    entries.filter((entry) => entry.occurred_on >= historyStartDate && entry.occurred_on <= lastDay && entry.kind === "income").forEach((entry) => {
       const key = entry.occurred_on.slice(0, 7);
       const item = evolution.get(key);
-      if (item) item[entry.kind === "income" ? "income" : "expenses"] += entry.amount_cents;
+      if (item) item.income += entry.amount_cents;
+    });
+    entries.filter((entry) => entry.occurred_on >= historyStartDate && entry.occurred_on <= lastDay && entry.kind === "expense" && !entry.credit_cards).forEach((entry) => {
+      const key = entry.occurred_on.slice(0, 7);
+      const item = evolution.get(key);
+      if (item) item.expenses += entry.amount_cents;
+    });
+    invoiceItems.filter((item) => item.due_date >= historyStartDate && item.due_date <= lastDay).forEach((item) => {
+      const key = item.due_date.slice(0, 7);
+      const evolutionItem = evolution.get(key);
+      if (evolutionItem) evolutionItem.expenses += item.amount_cents;
     });
 
     return {

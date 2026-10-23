@@ -216,7 +216,7 @@ export function DashboardView({ data }: { data: DashboardData }) {
       <section className="grid gap-6 xl:grid-cols-2">
         <article className="rounded-xl border bg-card p-5 shadow-sm">
           <h2 className="text-lg font-semibold">Evolução mensal</h2>
-          <p className="text-sm text-muted-foreground">Receitas e despesas dos últimos seis meses.</p>
+          <p className="text-sm text-muted-foreground">Receitas e despesas dos últimos seis meses; cartões entram no mês de vencimento da fatura.</p>
           {data.monthlyEvolution.some((item) => item.expenses || item.income) ? (
             <div className="mt-5 h-72">
               <ResponsiveContainer height="100%" width="100%">

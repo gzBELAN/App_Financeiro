@@ -49,7 +49,7 @@ Todos os cálculos também são filtrados pelo controle financeiro ativo, evitan
 
 ## Gráficos e visualizações
 
-- Evolução mensal de receitas e despesas nos seis meses até o período filtrado.
+- Evolução mensal de receitas e despesas nos seis meses até o período filtrado; despesas de cartão são contabilizadas no mês de vencimento da fatura, como nos indicadores de gastos.
 - Distribuição de gastos por categoria.
 - Gastos por cartão de crédito.
 - Progresso dos objetivos financeiros ativos.
